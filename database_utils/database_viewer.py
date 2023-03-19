@@ -22,7 +22,7 @@ def display_staff():
     staff_data = pd.read_sql_query(session.query(StaffTable).statement, conn)
 
     # Display the staff data in a tabular format
-    st.dataframe(staff_data)
+    st.dataframe(staff_data, width=1000)
 
 
 def display_patients():
@@ -31,7 +31,7 @@ def display_patients():
     patient_data = pd.read_sql_query(session.query(ObservationsTable).statement, conn)
 
     # Display the patient data in a tabular format
-    st.dataframe(patient_data)
+    st.dataframe(patient_data, width=1000)
 
 
 """"
