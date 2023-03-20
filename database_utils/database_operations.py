@@ -60,17 +60,20 @@ def update_staff():
     staff = session.query(StaffTable).filter_by(id=staff_id).first()
 
     if staff is not None:
-        staff.name = st.text_input(f"Enter staff name (press enter to keep {staff.name}): ",
+        staff.name = st.text_input(f"Enter staff name (ignore to keep {staff.name}): ",
                                    placeholder=staff.name).upper() or staff.name
-        staff.role = st.text_input("Enter staff role (press enter to keep existing role): ",
+        staff.role = st.text_input("Enter staff role (ignore to keep existing role): ",
                                    placeholder=staff.role) or staff.role
         staff.gender = st.text_input(
-            "Enter staff gender (press enter to keep existing gender): ",
+            "Enter staff gender (ignore to keep existing gender): ",
             placeholder=staff.gender).upper() or staff.gender
 
-        obs_assign = st.text_input("Enter any key to assign for obs (press enter for no obs): ",
+        obs_assign = st.text_input("Enter any key to switch status (ignore to keep current status): ",
                                    placeholder=staff.assigned)
-        staff.assigned = bool(obs_assign) or staff.assigned is False
+        if obs_assign:
+            staff.assigned = True
+        else:
+            staff.assigned = False
 
         start_time = st.text_input("Enter staff start time (HH:MM) (press enter if LD or N shift): ")
         end_time = st.text_input("Enter staff end time (HH:MM) (press enter if LD or N shift): ")
