@@ -68,12 +68,24 @@ def update_staff():
             "Enter staff gender (ignore to keep existing gender): ",
             placeholder=staff.gender).upper() or staff.gender
 
-        obs_assign = st.text_input("Enter any key to switch status (ignore to keep current status): ",
-                                   placeholder=staff.assigned)
-        if obs_assign:
-            staff.assigned = True
-        else:
-            staff.assigned = False
+        # obs_assign = st.text_input("Enter any key to switch status (ignore to keep current status): ",
+        #                            placeholder=staff.assigned)
+        # if obs_assign:
+        #     if staff.assigned:
+        #         staff.assigned = False
+        #     else:
+        #         staff.assigned = True
+        # Prompt user to toggle assignment status with a button
+        if st.button("Toggle Assignment Status"):
+            # Negate the current value of staff.assigned
+            staff.assigned = not staff.assigned  # Toggles boolean
+
+            # Print updated status message to console
+            status = "assigned" if staff.assigned else "unassigned"
+            print(f"Staff member is now {status}")
+
+        # Let user know the current assignment status
+        st.write(f"Current assignment status: {'assigned' if staff.assigned else 'unassigned'}")
 
         start_time = st.text_input("Enter staff start time (HH:MM) (press enter if LD or N shift): ")
         end_time = st.text_input("Enter staff end time (HH:MM) (press enter if LD or N shift): ")
