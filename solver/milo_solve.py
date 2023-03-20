@@ -3,6 +3,8 @@
 import os
 import sys
 
+from pulp import PULP_CBC_CMD
+
 # add the path to the custom module to the system's path list
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -151,6 +153,9 @@ def solve_staff_allocation(shift):
 
     # Solve the problem
     problem.solve()
+    # set the logPath and keepFiles parameters to create a log of the MIP formulation
+    status = problem.solve(PULP_CBC_CMD(msg=False, logPath="log.txt", keepFiles=True))
+    problem.writeLP('allocations.lp')
 
     # Print the status of the solution
     st.write("Status:", pulp.LpStatus[problem.status])
@@ -159,9 +164,6 @@ def solve_staff_allocation(shift):
 
     print_results(staff, observations, assignments, shift)
     return staff, observations, assignments
-
-
-
 
 
 if __name__ == "__main__":
