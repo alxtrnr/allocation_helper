@@ -7,11 +7,10 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
-import pandas as pd
-from sqlalchemy import create_engine, MetaData, Column, Integer, String
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database.database_creation import StaffTable, ObservationsTable
-from database_utils.database_viewer import display_staff, display_patients, staff_to_assign
+from database_utils.database_viewer import display_staff, display_patients
 
 # Create an engine to carry on with the table. This is the SQLite engine.
 engine = create_engine('sqlite:///example02.db')
