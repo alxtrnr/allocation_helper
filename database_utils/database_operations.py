@@ -7,9 +7,11 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
-from sqlalchemy import create_engine
+import pandas as pd
+from sqlalchemy import create_engine, MetaData, Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 from database.database_creation import StaffTable, ObservationsTable
+from database_utils.database_viewer import display_staff, display_patients, staff_to_assign
 
 # Create an engine to carry on with the table. This is the SQLite engine.
 engine = create_engine('sqlite:///example02.db')
@@ -39,10 +41,10 @@ def add_staff():
 
 
 def add_patient():
-    name = st.text_input("Enter patient name: ").title()
-    observation_level = st.text_input("Enter patient observation level: ")
-    room_number = st.text_input("Enter patient room number: ")
-    gender_req = st.text_input("Enter staff gender required for obs m/f: ", autocomplete=None).upper()
+    name = st.text_input("Name").title()
+    observation_level = st.text_input("Observation level ")
+    room_number = st.text_input("Room number")
+    gender_req = st.text_input("Staff gender required for obs m/f: ", autocomplete=None).upper()
     if name and observation_level and room_number and gender_req:
         patient = ObservationsTable(
             name=name,
@@ -56,26 +58,19 @@ def add_patient():
 
 
 def update_staff():
-    staff_id = st.text_input("Enter staff ID to update: ")
-    staff = session.query(StaffTable).filter_by(id=staff_id).first()
+    display_staff()
+    staff_name = st.text_input("Enter staff name to update: ").title()
+    staff = session.query(StaffTable).filter_by(name=staff_name).first()
 
     if staff is not None:
         staff.name = st.text_input(f"Enter staff name (ignore to keep {staff.name}): ",
-                                   placeholder=staff.name).upper() or staff.name
+                                   placeholder=staff.name).title() or staff.name
         staff.role = st.text_input("Enter staff role (ignore to keep existing role): ",
                                    placeholder=staff.role) or staff.role
         staff.gender = st.text_input(
             "Enter staff gender (ignore to keep existing gender): ",
             placeholder=staff.gender).upper() or staff.gender
 
-        # obs_assign = st.text_input("Enter any key to switch status (ignore to keep current status): ",
-        #                            placeholder=staff.assigned)
-        # if obs_assign:
-        #     if staff.assigned:
-        #         staff.assigned = False
-        #     else:
-        #         staff.assigned = True
-        # Prompt user to toggle assignment status with a button
         if st.button("Toggle Assignment Status"):
             # Negate the current value of staff.assigned
             staff.assigned = not staff.assigned  # Toggles boolean
@@ -126,23 +121,19 @@ def update_staff():
             staff.start_time = 0
             staff.end_time = 12
         staff.duration = staff.end_time - staff.start_time
+
         # Prompt user to enter the times to add or remove from an exclude times list which will then be created
         times = st.text_input(
-            "Enter times to omit staff from observations (press enter to keep existing status): ").split()
+            f"Enter the time(s) you want to add or remove from omit_time (ignore to keep existing status): ",
+            placeholder=f"Time {staff.omit_time} are omitted.").split() or []
+
         # If times are provided
-        for time in times:
-            if time:
-                # If the time is already in the omit time list, remove it
-                if int(time) in staff.omit_time:
-                    staff.omit_time.remove(time)
-                    st.write(f"Time {time} removed from omits time list for staff {staff.name}.")
-                else:
-                    # Otherwise, add the time to the omit time list
-                    staff.omit_time.append(int(time))
-                    st.write(f"Time {time} added to omit time list for staff {staff.name}.")
-            else:
-                st.write("No time provided.")
-                staff.omit_time = []
+        if len(times) > 0:
+            for omit_time in times:
+                staff.omit_time.append(int(omit_time))
+                st.write(f"Time {omit_time} added to omit time list for staff {staff.name}.")
+        else:
+            staff.omit_time = []
         session.commit()  # Save the changes to the database
 
         # Prompt user to enter the patient ID to add or remove from the staff's cherry-pick list
@@ -174,11 +165,12 @@ def update_staff():
 
 
 def update_patient():
+    display_patients()
     # Prompt user to enter the patient ID to update
-    patient_id = st.text_input("Enter patient ID to update: ")
+    patient_name = st.text_input("Enter patient name to update: ")
 
     # Retrieve the patient with the given ID from the database
-    patient = session.query(ObservationsTable).filter_by(id=patient_id).first()
+    patient = session.query(ObservationsTable).filter_by(name=patient_name).first()
 
     # If the patient is found in the database
     if patient:
@@ -222,8 +214,9 @@ def update_patient():
 
 
 def delete_staff():
-    staff_id = st.text_input("Enter staff ID to delete: ")
-    staff = session.query(StaffTable).filter_by(id=staff_id).first()
+    display_staff()
+    staff_name = st.text_input("Enter staff name to delete: ")
+    staff = session.query(StaffTable).filter_by(name=staff_name).first()
 
     if staff is not None:
         st.write(f"{staff.name} has been deleted...")
@@ -236,8 +229,9 @@ def delete_staff():
 
 
 def delete_patient():
-    patient_id = st.text_input("Enter patient ID to delete: ")
-    patient = session.query(ObservationsTable).filter_by(id=patient_id).first()
+    display_patients()
+    patient_name = st.text_input("Enter patient name to delete: ")
+    patient = session.query(ObservationsTable).filter_by(name=patient_name).first()
 
     if patient is not None:
         # Remove the patient name from the cherry-pick list of all staff members
@@ -249,27 +243,6 @@ def delete_patient():
         st.write("Patient deleted successfully.")
     else:
         st.write("Patient not found.")
-
-
-def assign_on_obs():
-    staff_id = st.text_input("Enter staff ID to assign on obs: ").split()
-    staff = [session.query(StaffTable).filter_by(id=staff_id).first() for staff_id in staff_id]
-
-    for staff in staff:
-        if staff is not None:
-            staff.assigned = True
-            session.commit()
-            st.write(f"{staff.name} assigned to obs successfully")
-        else:
-            st.write("Staff not found.")
-
-    # if staff is not None:
-    #     obs_assign = input(f"Enter any key to assign to obs (press enter to keep existing status): ")
-    #     staff.assigned = bool(obs_assign) or staff.assigned
-    #     session.commit()
-    #     click.echo(f"{staff.name} assigned to obs successfully.")
-    # else:
-    #     click.echo("Staff not found.")
 
 
 def view_staff():

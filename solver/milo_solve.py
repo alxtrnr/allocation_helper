@@ -154,7 +154,7 @@ def solve_staff_allocation(shift):
     # Solve the problem
     problem.solve()
     # set the logPath and keepFiles parameters to create a log of the MIP formulation
-    status = problem.solve(PULP_CBC_CMD(msg=False, logPath="log.txt", keepFiles=True))
+    solve = problem.solve(PULP_CBC_CMD(logPath="log.txt", keepFiles=True, msg=True))
     problem.writeLP('allocations.lp')
 
     # Print the status of the solution
@@ -165,6 +165,3 @@ def solve_staff_allocation(shift):
     print_results(staff, observations, assignments, shift)
     return staff, observations, assignments
 
-
-if __name__ == "__main__":
-    solve_staff_allocation('D')

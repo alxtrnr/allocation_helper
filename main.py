@@ -11,7 +11,7 @@ st.set_page_config(page_title="Allocate Patient Observations", page_icon="🔭",
 
 from pages import home, add_patient_details, add_staff_details, delete_patient_details, delete_staff_details, \
     display_patient, \
-    display_staff, select_staff_to_put_on_obs, update_patient_details, update_staff_details, \
+    display_staff, update_patient_details, update_staff_details, \
     complete_allocations
 
 
@@ -30,7 +30,6 @@ def app():
         "View Patient": display_patient,
         "View Staff": display_staff,
 
-        "Select Staff to Put on Obs": select_staff_to_put_on_obs,
         "Complete Allocations": complete_allocations,
     }
     # Use a beta_container to hide the pages in the sidebar

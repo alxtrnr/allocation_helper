@@ -67,7 +67,7 @@ def print_results(staff, observations, assignments, shift):
     df = pd.DataFrame(schedule)
     df.index = index
     df = df.rename(columns=dict(zip(df.columns, headers)))
-    st.dataframe(df, width=1000, height=490)
+    st.dataframe(df, width=1200, height=490)
 
     # Print the assignments
     for s in staff:

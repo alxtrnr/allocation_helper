@@ -32,14 +32,14 @@ def get_patient_rows_as_dict():
 
 
 # Print the dictionaries of each row in the StaffTable
-staff_rows_as_dict = get_staff_rows_as_dict()
-print('\nStaff')
-for staff_row in staff_rows_as_dict:
-    print(staff_row)
+# staff_rows_as_dict = get_staff_rows_as_dict()
+# print('\nStaff')
+# for staff_row in staff_rows_as_dict:
+#     print(staff_row)
 
 # Print the dictionaries of each row in the ObservationsTable
-patient_rows_as_dict = get_patient_rows_as_dict()
-print('\nObservations')
-for patient_row in patient_rows_as_dict:
-    print(patient_row)
+# patient_rows_as_dict = get_patient_rows_as_dict()
+# print('\nObservations')
+# for patient_row in patient_rows_as_dict:
+#     print(patient_row)
 
