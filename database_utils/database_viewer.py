@@ -25,7 +25,7 @@ def display_staff():
     staff_data = staff_data.drop('id', axis=1)
 
     # Display the staff data in a tabular format without the index column
-    st.dataframe(staff_data, width=1200, height=650)
+    st.dataframe(staff_data, width=1200, height=625)
 
 
 def staff_to_assign():
@@ -34,8 +34,12 @@ def staff_to_assign():
 
     # Drop the id column
     staff_d = staff_d.drop('id', axis=1)
+    staff_d = staff_d.drop("block", axis=1)
+    staff_d = staff_d.drop('start_time', axis=1)
+    staff_d = staff_d.drop('end_time', axis=1)
+    staff_d = staff_d.drop('duration', axis=1)
 
-    edited_df = st.experimental_data_editor(data=staff_d, width=1200, height=650)
+    edited_df = st.experimental_data_editor(data=staff_d, width=1200, height=625)
     for i, row in edited_df.iterrows():
         staff_name = row['name'].title()
         staff = session.query(StaffTable).filter_by(name=staff_name).first()
@@ -52,4 +56,4 @@ def display_patients():
     patient_data = patient_data.drop('id', axis=1)
 
     # Display the patient data in a tabular format
-    st.dataframe(patient_data, width=1000, height=625)
+    st.dataframe(patient_data, width=1200, height=625)
