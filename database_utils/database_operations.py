@@ -80,6 +80,7 @@ def update_staff():
         # Let user know the current assignment status
         st.write(f"Current assignment status: {'assigned' if staff.assigned else 'unassigned'}")
 
+        # Prompt user to enter the start and end times for the staff member
         start_time = st.text_input("Enter staff start time (HH:MM) (press enter if LD or N shift): ")
         end_time = st.text_input("Enter staff end time (HH:MM) (press enter if LD or N shift): ")
 
@@ -109,16 +110,25 @@ def update_staff():
                            '06:00': 10,
                            '07:00': 11
                            }
+
         if start_time in day_converter.keys():
             staff.start_time = day_converter[start_time]
-            staff.end_time = day_converter[end_time]
         elif start_time in night_converter.keys():
-            staff.start_time = night_converter[start_time]
+            staff.start_time = night_converter[end_time]
+        else:
+            staff.start_time = 0
+            staff.end_time = 12
+
+        if end_time in day_converter.keys():
+            staff.end_time = day_converter[end_time]
+        elif end_time in night_converter.keys():
             staff.end_time = night_converter[end_time]
         else:
             staff.start_time = 0
             staff.end_time = 12
+
         staff.duration = staff.end_time - staff.start_time
+        session.commit()
 
         # Prompt user to enter the times to add or remove from an exclude times list which will then be created
         times = st.text_input(
