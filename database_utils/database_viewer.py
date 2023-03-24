@@ -35,8 +35,8 @@ def staff_to_assign():
     # Drop the id column
     staff_d = staff_d.drop('id', axis=1)
     staff_d = staff_d.drop("block", axis=1)
-    staff_d = staff_d.drop('start_time', axis=1)
-    staff_d = staff_d.drop('end_time', axis=1)
+    # staff_d = staff_d.drop('start_time', axis=1)
+    # staff_d = staff_d.drop('end_time', axis=1)
     staff_d = staff_d.drop('duration', axis=1)
 
     edited_df = st.experimental_data_editor(data=staff_d, width=1200, height=625)
