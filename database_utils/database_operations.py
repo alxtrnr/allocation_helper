@@ -57,7 +57,6 @@ def add_patient():
 
 
 def update_staff():
-    display_staff()
     staff_name = st.text_input("Enter staff name to update: ").title()
     staff = session.query(StaffTable).filter_by(name=staff_name).first()
 
