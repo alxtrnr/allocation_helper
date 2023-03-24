@@ -24,12 +24,12 @@ def app():
     
     
     Staff are allocated to patients according to each patients observation level. Staff are assigned by default for 12 
-    hours. This can be changed for each staff member according to their availability. Time for breaks is allocated 
-    automatically though may manually be assigned by the user. The same functionality allows any time needed for other 
+    hours. You may change this for each member of staff according to their availability. Time for breaks is allocated 
+    automatically though may also be manually assigned. The same functionality allows any time needed for other 
     tasks such as appointments, meetings, etc to be set. Staff are never assigned for more than two consecutive hours. 
     Requirements for staff of a specific gender to undertake a specific patients observations can be factored in. 
-    Requirements to exclude a staff member from a specific patient's observations may also be set. Staff may also be 
-    assigned to undertake observations for named patients only.   
+    A requirement to exclude a staff member from a specific patient's observations may also be set. Cherry picking 
+    enables staff to be assigned observations for named patients only.   
     """)
 
 
