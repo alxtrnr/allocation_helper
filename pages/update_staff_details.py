@@ -7,4 +7,5 @@ def app():
     update_staff()
 
 
-app()
+if __name__ == "__main__":
+    app()
