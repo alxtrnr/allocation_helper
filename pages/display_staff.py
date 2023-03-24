@@ -4,7 +4,7 @@ from database_utils.database_viewer import staff_to_assign
 
 def app():
     st.title("Staff")
-    st.write("Assigned / unassigned staff to undertake observations")
+    st.write("Use the checkbox to change status of staff being assigned / unassigned for observations.")
     staff_to_assign()
 
 
