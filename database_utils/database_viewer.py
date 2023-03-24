@@ -25,13 +25,17 @@ def display_staff():
     staff_data = staff_data.drop('id', axis=1)
 
     # Display the staff data in a tabular format without the index column
-    st.dataframe(staff_data, width=1000, height=650)
+    st.dataframe(staff_data, width=1200, height=650)
 
 
 def staff_to_assign():
     conn = engine.connect()
     staff_d = pd.read_sql_query(session.query(StaffTable).statement, conn)
-    edited_df = st.experimental_data_editor(data=staff_d, width=1000, height=650)
+
+    # Drop the id column
+    staff_d = staff_d.drop('id', axis=1)
+
+    edited_df = st.experimental_data_editor(data=staff_d, width=1200, height=650)
     for i, row in edited_df.iterrows():
         staff_name = row['name'].title()
         staff = session.query(StaffTable).filter_by(name=staff_name).first()

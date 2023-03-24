@@ -7,4 +7,5 @@ def app():
     display_patients()
 
 
-app()
+if __name__ == "__main__":
+    app()

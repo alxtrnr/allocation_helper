@@ -14,4 +14,5 @@ def app():
     milo_solve.solve_staff_allocation(shift)
 
 
-app()
+if __name__ == "__main__":
+    app()

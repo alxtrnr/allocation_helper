@@ -7,4 +7,5 @@ def app():
     delete_patient()
 
 
-app()
+if __name__ == "__main__":
+    app()

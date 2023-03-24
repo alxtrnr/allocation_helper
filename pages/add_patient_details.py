@@ -13,4 +13,5 @@ def app():
     add_patient()
 
 
-app()
+if __name__ == "__main__":
+    app()

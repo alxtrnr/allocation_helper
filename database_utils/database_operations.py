@@ -136,12 +136,13 @@ def update_staff():
         session.commit()  # Save the changes to the database
 
         # Prompt user to enter the patient ID to add or remove from the staff's cherry-pick list
-        patient_id = st.text_input(
-            "Enter patient ID to add or remove from staff's cherry_pick list (press enter to keep existing status): ")
+        patient_name = st.text_input(
+            "Enter patient name to add or remove from staff's cherry_pick list (press enter to keep existing status): ",
+            placeholder=staff.cherry_pick).title()
         # If the patient ID is provided
-        if patient_id:
+        if patient_name:
             # Retrieve the patient with the given ID from the database
-            patient = session.query(ObservationsTable).filter_by(id=patient_id).first()
+            patient = session.query(ObservationsTable).filter_by(name=patient_name).first()
 
             # If the patient is found in the database
             if patient:

@@ -13,4 +13,5 @@ def app():
     add_staff()
 
 
-app()
+if __name__ == "__main__":
+    app()

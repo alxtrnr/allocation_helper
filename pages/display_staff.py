@@ -8,4 +8,5 @@ def app():
     staff_to_assign()
 
 
-app()
+if __name__ == "__main__":
+    app()
