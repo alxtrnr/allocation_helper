@@ -9,7 +9,7 @@ from database.database_creation import StaffTable, ObservationsTable
 from sqlalchemy.orm import sessionmaker
 
 # Create an engine to carry on with the table. This is the SQLite engine.
-engine = create_engine('sqlite:///example02.db', echo=False)
+engine = create_engine('sqlite:///dev01.db', echo=False)
 
 # Construct a sessionmaker object and bind it to the engine
 Session = sessionmaker(bind=engine)
@@ -35,8 +35,9 @@ def staff_to_assign():
     # Drop the id column
     staff_d = staff_d.drop('id', axis=1)
     staff_d = staff_d.drop("block", axis=1)
-    # staff_d = staff_d.drop('start_time', axis=1)
-    # staff_d = staff_d.drop('end_time', axis=1)
+    staff_d = staff_d.drop('start_time', axis=1)
+    staff_d = staff_d.drop('end_time', axis=1)
+    staff_d = staff_d.drop('omit_time', axis=1)
     staff_d = staff_d.drop('duration', axis=1)
 
     edited_df = st.experimental_data_editor(data=staff_d, width=1200, height=625)
