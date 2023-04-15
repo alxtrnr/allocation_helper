@@ -114,8 +114,7 @@ def solve_staff_allocation(shift):
                         # set all other assignments for this staff to 0 for this time slot
                         for other_o in observations:
                             if other_o != o and (s["id"], other_o["id"], t) in assignments:
-                                problem += assignments[(s["id"], other_o["id"],
-                                                        t)] == 0, f"Staff {s['id']} assigned to two observations ({o['id']}, {other_o['id']}) at the same time {t}"
+                                problem += assignments[(s["id"], other_o["id"], t)] == 0
 
     # Ensure staff are assigned to no more than one patient at a time
     for t in range(12):
