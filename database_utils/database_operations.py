@@ -10,10 +10,10 @@ import streamlit as st
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database.database_creation import StaffTable, ObservationsTable
-from database_utils.database_viewer import display_staff, display_patients
+from database_utils.database_viewer import display_patients, staff_to_assign
 
 # Create an engine to carry on with the table. This is the SQLite engine.
-engine = create_engine('sqlite:///example02.db')
+engine = create_engine('sqlite:///dev01.db')
 
 # Construct a sessionmaker object and bind it to the engine
 Session = sessionmaker(bind=engine)
@@ -42,12 +42,14 @@ def add_staff():
 def add_patient():
     name = st.text_input("Name").title()
     observation_level = st.text_input("Observation level ")
+    obs_type = st.text_input("Observation details e.g. eyesight, arms-length, no bathroom privacy... ")
     room_number = st.text_input("Room number")
     gender_req = st.text_input("Staff gender required for obs m/f: ", autocomplete=None).upper()
     if name and observation_level and room_number and gender_req:
         patient = ObservationsTable(
             name=name,
             observation_level=observation_level,
+            obs_type=obs_type,
             room_number=room_number,
             gender_req=gender_req
         )
@@ -81,8 +83,8 @@ def update_staff():
         st.write(f"Current assignment status: {'assigned' if staff.assigned else 'unassigned'}")
 
         # Prompt user to enter the start and end times for the staff member
-        start_time = st.text_input("Enter staff start time (HH:MM) (press enter if LD or N shift): ")
-        end_time = st.text_input("Enter staff end time (HH:MM) (press enter if LD or N shift): ")
+        start_time = st.text_input("Enter start time HH:MM: ")
+        end_time = st.text_input("Enter end time HH:MM: ")
 
         day_converter = {'08:00': 0,
                          '09:00': 1,
@@ -110,19 +112,51 @@ def update_staff():
                            '06:00': 10,
                            '07:00': 11
                            }
+        converter = {'08:00': 0,
+                     '09:00': 1,
+                     '10:00': 2,
+                     '11:00': 3,
+                     '12:00': 4,
+                     '13:00': 5,
+                     '14:00': 6,
+                     '15:00': 7,
+                     '16:00': 8,
+                     '17:00': 9,
+                     '18:00': 10,
+                     '19:00': 11,
+                     '20:00': 0,
+                     '21:00': 1,
+                     '22:00': 2,
+                     '23:00': 3,
+                     '00:00': 4,
+                     '01:00': 5,
+                     '02:00': 6,
+                     '03:00': 7,
+                     '04:00': 8,
+                     '05:00': 9,
+                     '06:00': 10,
+                     '07:00': 11
+                     }
 
-        if start_time in day_converter.keys():
+        day_set = set(day_converter)
+        night_set = set(night_converter)
+
+        if start_time in day_set:
             staff.start_time = day_converter[start_time]
-        elif start_time in night_converter.keys():
-            staff.start_time = night_converter[end_time]
+            staff.start = start_time
+        elif start_time in night_set:
+            staff.start_time = night_converter[start_time]
+            staff.start = start_time
         else:
             staff.start_time = 0
             staff.end_time = 12
 
-        if end_time in day_converter.keys():
+        if end_time in day_set:
             staff.end_time = day_converter[end_time]
-        elif end_time in night_converter.keys():
+            staff.end = end_time
+        elif end_time in night_set:
             staff.end_time = night_converter[end_time]
+            staff.end = end_time
         else:
             staff.start_time = 0
             staff.end_time = 12
@@ -130,19 +164,28 @@ def update_staff():
         staff.duration = staff.end_time - staff.start_time
         session.commit()
 
-        # Prompt user to enter the times to add or remove from an exclude times list which will then be created
-        times = st.text_input(
-            f"Enter the time(s) you want to add or remove from omit_time (ignore to keep existing status): ",
-            placeholder=f"Time {staff.omit_time} are omitted.").split() or []
+        # This section is to add / remove any times that staff should not be allocated to observations
+        ui_times = st.text_input(
+            f"Enter the hours(s) that {staff.name} should not be allocated to observations (ignore to keep existing "
+            f"status): ", placeholder=f"Time {staff.omit} are omitted.").split() or []
 
-        # If times are provided
-        if len(times) > 0:
-            for omit_time in times:
-                staff.omit_time.append(int(omit_time))
-                st.write(f"Time {omit_time} added to omit time list for staff {staff.name}.")
-        else:
+        if ui_times:
+            # clears the current status
             staff.omit_time = []
-        session.commit()  # Save the changes to the database
+            staff.omit = ''
+
+            # converts ui times into 12-hour range for processing
+            modified_times = [converter[time] for time in ui_times if time in converter]
+
+            # zip the two lists and sequentially update both time formats in the staff table
+            time_pairs = zip(modified_times, ui_times)
+            for m_t, ui_t in list(time_pairs):
+                staff.omit_time.append(int(m_t))
+                staff.omit += f' {ui_t}'
+
+        st.write(f"{staff.omit} added to omitted times for {staff.name}.")
+
+        session.commit()
 
         # Prompt user to enter the patient ID to add or remove from the staff's cherry-pick list
         patient_name = st.text_input(
@@ -188,6 +231,8 @@ def update_patient():
             f"Enter patient name (ignore to keep as {patient.name}): ").title() or patient.name
         patient.observation_level = st.text_input(
             f"Enter patient obs level (ignore to keep as {patient.observation_level}): ") or patient.observation_level
+        patient.obs_type = st.text_input(
+            f"Enter patient obs type (ignore to keep as {patient.obs_type}): ") or patient.obs_type
         patient.room_number = st.text_input(
             f"Enter patient room number (ignore to keep as {patient.room_number}): ") or patient.room_number
         patient.gender_req = st.text_input(
@@ -223,7 +268,7 @@ def update_patient():
 
 
 def delete_staff():
-    display_staff()
+    staff_to_assign()
     staff_name = st.text_input("Enter staff name to delete: ")
     staff = session.query(StaffTable).filter_by(name=staff_name).first()
 
