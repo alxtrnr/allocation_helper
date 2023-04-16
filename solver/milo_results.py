@@ -17,17 +17,27 @@ def get_staff_assignments(staff, observations, assignments):
     return assignments_dict
 
 
-def export_to_csv(data, headers, filename, index=None):
+def export_to_csv(data, headers, filename, index=None, index_label=''):
     with open(filename, "w", newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(headers)
-        if index:
-            writer.writerow([""] + index)
-        for i, row in enumerate(data):
-            if index:
+
+        if index is not None:
+            # Add the index header as the first column header
+            headers = [index_label] + headers
+
+            # Write the headers to the file
+            writer.writerow(headers)
+
+            # Write the data to the file
+            for i, row in enumerate(data):
+                writer.writerow([index[i]] + row)
+        else:
+            # Write the headers to the file
+            writer.writerow(headers)
+
+            # Write the data to the file
+            for i, row in enumerate(data):
                 writer.writerow([i] + row)
-            else:
-                writer.writerow(row)
 
 
 def print_results(staff, observations, assignments, shift):
@@ -44,8 +54,11 @@ def print_results(staff, observations, assignments, shift):
     assignments_dict = get_staff_assignments(staff, observations, assignments)
     headers = observations_names
     data = [[", ".join(assignments_dict[(o_name, t)]) for o_name in ob_names] for t in range(12)]
+
+    # generate CSV file of table 1 for downloading
     filename = "patient_col.csv"
-    export_to_csv(data, headers, filename, shift_hours)
+    export_to_csv(data, headers, filename, index=shift_hours)
+
     df_t1 = pd.DataFrame(data)
     df_t1.index = shift_hours
     df_t1 = df_t1.rename(columns=dict(zip(df_t1.columns, headers)))
@@ -84,7 +97,7 @@ def print_results(staff, observations, assignments, shift):
     df_t1.insert(0, '', df_t1.index)
     df_t2.insert(0, '', df_t2.index)
 
-    # save the DataFrames to a PDF file
+    # save both tables to a PDF file
     with PdfPages('tables.pdf') as pdf:
         fig, ax = plt.subplots(figsize=(8.5, 11))
         ax.axis('off')
@@ -95,8 +108,20 @@ def print_results(staff, observations, assignments, shift):
         ax.axis('off')
         ax.table(cellText=df_t1.values, colLabels=df_t1.columns, loc='center')
         pdf.savefig(fig)
-    st.download_button(label="Download Tables", data=open('tables.pdf', 'rb'),)
 
+        # generate CSV file of table 2 for downloading
+        filename = "staff_col.csv"
+        export_to_csv(schedule, headers, filename, index=shift_hours)
+
+    st.download_button(label="Download Tables as a PDF", data=open('tables.pdf', 'rb'), mime='pdf/a4')
+    st.download_button(label="Download Table 1 as an editable CSV file", data=open('patient_col.csv', 'rb'), mime='text/csv')
+    st.download_button(label="Download Table 2 as an editable CSV file", data=open('staff_col.csv', 'rb'), mime='text/csv')
+    # st.download_button(
+    #     label='Download CSV',
+    #     data=csv.encode(),
+    #     file_name='my_file.csv',
+    #     mime='text/csv'
+    # )
     # Display the assignments
     # for s in staff:
     #     st.markdown(f"\n###### Allocations for {s['name']}:")
@@ -104,4 +129,3 @@ def print_results(staff, observations, assignments, shift):
     #         for t in range(12):
     #             if assignments[(s["id"], o["id"], t)].value() == 1:
     #                 st.write(f"{s['name']} allocated to {o['name']} at time {t}")
-
