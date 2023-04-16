@@ -113,9 +113,12 @@ def print_results(staff, observations, assignments, shift):
         filename = "staff_col.csv"
         export_to_csv(schedule, headers, filename, index=shift_hours)
 
-    st.download_button(label="Download Tables as a PDF", data=open('tables.pdf', 'rb'), mime='pdf/a4')
-    st.download_button(label="Download Table 1 as an editable CSV file", data=open('patient_col.csv', 'rb'), mime='text/csv')
-    st.download_button(label="Download Table 2 as an editable CSV file", data=open('staff_col.csv', 'rb'), mime='text/csv')
+    st.download_button(label="Download Tables as a PDF", data=open('tables.pdf', 'rb'), file_name='tables.pdf',
+                       mime='pdf/a4')
+    st.download_button(label="Download Table 1 as an editable CSV file", data=open('patient_col.csv', 'rb'),
+                       file_name='table1.csv', mime='text/csv')
+    st.download_button(label="Download Table 2 as an editable CSV file", data=open('staff_col.csv', 'rb'),
+                       file_name='table2.csv', mime='text/csv')
     # st.download_button(
     #     label='Download CSV',
     #     data=csv.encode(),
