@@ -3,7 +3,7 @@ st.set_page_config(page_title="Allocate Patient Observations", page_icon="🔭",
 
 
 def app():
-    st.markdown("# The Allocations App")
+    st.markdown("# The Allocations Helper")
     st.markdown("""
     * ##### Create, update and delete patient and staff details
     * ##### View patient and staff details
