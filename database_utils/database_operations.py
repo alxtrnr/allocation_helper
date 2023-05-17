@@ -24,7 +24,7 @@ def add_staff():
     name = st.text_input("Enter staff name: ").title()
     role = st.text_input("Enter staff role: ").upper().strip() or None
     gender = st.text_input("Enter staff gender (m/f): ").upper().strip()
-    if name and role and gender:
+    if st.button("Save"):
         staff = StaffTable(
             name=name,
             role=role,
@@ -45,7 +45,7 @@ def add_patient():
     obs_type = st.text_input("Observation details e.g. eyesight, arms-length, no bathroom privacy... ")
     room_number = st.text_input("Room number")
     gender_req = st.text_input("Staff gender required for obs m/f: ", autocomplete=None).upper()
-    if name and observation_level and room_number and gender_req:
+    if st.button("Save"):
         patient = ObservationsTable(
             name=name,
             observation_level=observation_level,
@@ -210,8 +210,9 @@ def update_staff():
                 session.commit()  # Save the changes to the database
             else:
                 st.write("Patient not found.")
-        session.commit()
-        st.write("Staff updated successfully.")
+        if st.button("Save"):
+            session.commit()
+            st.write("Staff updated successfully.")
     else:
         st.write("Staff not found.")
 
@@ -260,8 +261,8 @@ def update_patient():
                 session.commit()  # Save the changes to the database
             else:
                 st.write("Staff not found.")
-        else:
-            session.commit()  # Save the changes to the database
+        if st.button("Save"):
+            session.commit()
             st.write("Patient updated successfully.")
     else:
         st.write("Patient not found.")
