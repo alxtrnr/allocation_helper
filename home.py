@@ -6,7 +6,6 @@ st.set_page_config(page_title="Allocate Patient Observations", page_icon="🔭",
 
 def app():
     st.markdown("# The Allocations Helper")
-<
     st.markdown(
         "### Use the Allocations Helper to assist with allocating staff to"
         " patient observations.")
