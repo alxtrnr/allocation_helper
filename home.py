@@ -16,7 +16,6 @@ def app():
 
     col1.markdown("""
     #### Functionality includes - 
-    st.markdown("""
     * ##### Create, update and delete patient and staff details
     * ##### View patient and staff details
     * ##### Assign staff to complete observations
