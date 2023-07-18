@@ -51,21 +51,21 @@ def authenticator_config():
 def authenticator_object():
     config = authenticator_config()
 
-    # auth = Authenticate(
-    #     dict(st.secrets['credentials']),
-    #     st.secrets['cookie']['name'],
-    #     st.secrets['cookie']['key'],
-    #     st.secrets['cookie']['expiry_days'],
-    #     st.secrets['preauthorized']
-    # )
-
     auth = Authenticate(
-        config['credentials'],
-        config['cookie']['name'],
-        config['cookie']['key'],
-        config['cookie']['expiry_days'],
-        config['preauthorized']
+        dict(st.secrets['credentials']),
+        st.secrets['cookie']['name'],
+        st.secrets['cookie']['key'],
+        st.secrets['cookie']['expiry_days'],
+        st.secrets['preauthorized']
     )
+
+    # auth = Authenticate(
+    #     config['credentials'],
+    #     config['cookie']['name'],
+    #     config['cookie']['key'],
+    #     config['cookie']['expiry_days'],
+    #     config['preauthorized']
+    # )
 
     # Initialize values in Session State
     if 'authenticator' not in st.session_state:
