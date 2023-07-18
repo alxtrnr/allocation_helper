@@ -1,4 +1,4 @@
-# milo_solve.py
+ # milo_solve.py
 
 import os
 import sys
@@ -56,15 +56,17 @@ def solve_staff_allocation(shift):
                 problem += pulp.lpSum([assignments[(s["id"], o["id"], t)] for s in
                                        staff]) == 3, f"Observation Level 3 (observation {o['id']}, time {t}) Constraint"
 
-    # Patients whose observation level == 4 must be assigned 4 staff for each time
+    # Patients whose observation level == 4 must be assigned 4 staff for each
+    # time
     for o in observations:
         if o["observation_level"] == "4":
             for t in range(12):
                 problem += pulp.lpSum([assignments[(s["id"], o["id"], t)] for s in
                                        staff]) == 4, f"Observation Level 4 (observation {o['id']}, time {t}) Constraint"
 
-    # If gender_req == M staff whose gender == F must not be assigned any time for that patient
-    # If gender_req == F staff whose gender == M must not be assigned any time for that patient
+    # If gender_req == M staff whose gender == F must not be assigned any time
+    # for that patient If gender_req == F staff whose gender == M must not be
+    # assigned any time for that patient
     for o in observations:
         for s in staff:
             if (o["gender_req"] == "M" and s["gender"] == "F") or (o["gender_req"] == "F" and s["gender"] == "M"):
@@ -99,7 +101,7 @@ def solve_staff_allocation(shift):
     # Names in omit_staff must not be assigned any time for that patient
     for o in observations:
         for s in staff:
-            if s["id"] in o["omit_staff"]:
+            if s["name"] in o["omit_staff"]:
                 for t in range(12):
                     problem += assignments[(
                         s["id"], o["id"],
@@ -111,7 +113,8 @@ def solve_staff_allocation(shift):
             if o["name"] in s["cherry_pick"]:
                 for t in range(12):
                     if assignments[(s["id"], o["id"], t)] == 1:
-                        # set all other assignments for this staff to 0 for this time slot
+                        # set all other assignments for this staff to 0 for
+                        # this time slot
                         for other_o in observations:
                             if other_o != o and (s["id"], other_o["id"], t) in assignments:
                                 problem += assignments[(s["id"], other_o["id"], t)] == 0
@@ -119,13 +122,16 @@ def solve_staff_allocation(shift):
     # Ensure staff are assigned to no more than one patient at a time
     for t in range(12):
         for s in staff:
-            # Create a list of patients assigned to the current staff at the current time
+            # Create a list of patients assigned to the current staff at the
+            # current time
             assigned_patients = [assignments[(s["id"], o["id"], t)] for o in observations]
-            # Add a constraint that the sum of the assigned_patients list must be less than or equal to 1
+            # Add a constraint that the sum of the assigned_patients list
+            # must be less than or equal to 1
             problem += pulp.lpSum(
                 assigned_patients) <= 1, f"Staff Row Constraint (staff {s['id']}, time {t}) Constraint"
 
-    # Ensure each staff member is not assigned to an observation for more than 2 consecutive hours
+    # Ensure each staff member is not assigned to an observation for more
+    # than 2 consecutive hours
     for s in staff:
         for t in range(11):
             if s["assigned"] and s["start_time"] <= t < s["end_time"] - 1:
@@ -133,7 +139,8 @@ def solve_staff_allocation(shift):
                                        range(max(0, t - 1),
                                              t + 2)]) <= 2, f"Consecutive Hours (staff {s['id']}, time {t}) Constraint"
 
-    # Staff whose duration is < 12 must have >= 1 unassigned time slot between their start_time + 3 and end_time
+    # Staff whose duration is < 12 must have >= 1 unassigned time slot
+    # between their start_time + 3 and end_time
     for s in staff:
         if s["duration"] < 12:
             for t in range(s["start_time"] + 3, s["end_time"]):
@@ -141,7 +148,8 @@ def solve_staff_allocation(shift):
                                        range(t - 1,
                                              t + 1)]) <= 1, f"Minimum Break (staff {s['id']}, time {t}) Constraint"
 
-    # Staff whose duration is >= 12 must have >= 2 unassigned time slots between 5 and 11
+    # Staff whose duration is >= 12 must have >= 2 unassigned time slots
+    # between 5 and 11
     for s in staff:
         if s["duration"] >= 12:
             problem += pulp.lpSum(
@@ -156,7 +164,8 @@ def solve_staff_allocation(shift):
 
     # Solve the problem
     problem.solve()
-    # set the logPath and keepFiles parameters to create a log of the MIP formulation
+    # set the logPath and keepFiles parameters to create a log of the MIP
+    # formulation
     solve = problem.solve(PULP_CBC_CMD(logPath="log.txt", keepFiles=True, msg=True))
     problem.writeLP('allocations.lp')
 
