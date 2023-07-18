@@ -1,4 +1,4 @@
-# 10 - Sign_Out.py
+# Login.py
 
 from streamlit_authenticator import Authenticate
 import streamlit as st
@@ -49,8 +49,6 @@ def authenticator_config():
 
 
 def authenticator_object():
-    config = authenticator_config()
-
     auth = Authenticate(
         dict(st.secrets['credentials']),
         st.secrets['cookie']['name'],
@@ -58,7 +56,7 @@ def authenticator_object():
         st.secrets['cookie']['expiry_days'],
         st.secrets['preauthorized']
     )
-
+    # config = authenticator_config()
     # auth = Authenticate(
     #     config['credentials'],
     #     config['cookie']['name'],
