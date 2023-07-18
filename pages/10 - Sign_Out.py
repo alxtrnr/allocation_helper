@@ -1,6 +1,6 @@
 import streamlit as st
-from Login import authenticate_user
-from Login import authenticator_object
+from home import authenticate_user
+from home import authenticator_object
 
 
 def app():

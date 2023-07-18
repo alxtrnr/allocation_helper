@@ -1,4 +1,4 @@
-# Login.py
+# home.py
 
 from streamlit_authenticator import Authenticate
 import streamlit as st
