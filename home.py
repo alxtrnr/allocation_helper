@@ -3,11 +3,14 @@
 from streamlit_authenticator import Authenticate
 import streamlit as st
 
-
 st.set_page_config(page_title="Allocation Helper", page_icon="🔭",
                    layout="wide",
-                   menu_items={"Get help": None, "Report a Bug": None,
-                               "About": 'Alexander Turner 2023'})
+                   menu_items={"Get help": "https://github.com/alxtrnr"
+                                           "/spaa_streamlit/issues",
+                               "Report a Bug": "https://github.com/alxtrnr"
+                                               "/spaa_streamlit/issues",
+                               "About": "https://github.com/alxtrnr"
+                                        "/spaa_streamlit#readme"})
 
 
 def landing_blurb():
@@ -54,10 +57,12 @@ def authenticator_object():
 
 
 auth = authenticator_object()
+ward_db = 'empty'
 
 
 def authenticate_user():
     # render_log_in_widget
+    global ward_db
     name, authentication_status, username = auth.login('Login', 'sidebar')
 
     try:
