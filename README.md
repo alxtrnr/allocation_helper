@@ -1,5 +1,5 @@
 # The Allocation Helper
-Typical Use Case - 
+**Typical Use Case:** 
 An inpatient mental health ward. The nurse in charge must ensure all general and enhanced observations are allocated to staff correctly for the duration of the shift. 
 
 ## Generate allocations that factor in -
@@ -18,4 +18,4 @@ An inpatient mental health ward. The nurse in charge must ensure all general and
 * Generate and view suggested allocations
 * Download suggested allocations. These can be tweaked as needed.
 
-The app is built with and hosted on [Streamlit](https://allocations-and-observations.streamlit.app/) 
+The app is built with and hosted on [Streamlit](https://allocations-and-observations.streamlit.app/).
