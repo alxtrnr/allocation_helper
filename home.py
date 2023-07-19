@@ -2,13 +2,12 @@
 
 from streamlit_authenticator import Authenticate
 import streamlit as st
-import yaml
-from yaml.loader import SafeLoader
 
-st.set_page_config(page_title="Allocate Patient Observations", page_icon="🔭",
-                   layout="wide", menu_items={"Get help": None,
-                                              "Report a Bug": None,
-                                              "About": 'Alexander Turner 2023'})
+
+st.set_page_config(page_title="Allocation Helper", page_icon="🔭",
+                   layout="wide",
+                   menu_items={"Get help": None, "Report a Bug": None,
+                               "About": 'Alexander Turner 2023'})
 
 
 def landing_blurb():
@@ -42,12 +41,6 @@ def landing_blurb():
         """)
 
 
-def authenticator_config():
-    with open('config.yaml') as file:
-        auth_config = yaml.load(file, Loader=SafeLoader)
-        return auth_config
-
-
 def authenticator_object():
     auth = Authenticate(
         dict(st.secrets['credentials']),
@@ -56,18 +49,6 @@ def authenticator_object():
         st.secrets['cookie']['expiry_days'],
         st.secrets['preauthorized']
     )
-    # config = authenticator_config()
-    # auth = Authenticate(
-    #     config['credentials'],
-    #     config['cookie']['name'],
-    #     config['cookie']['key'],
-    #     config['cookie']['expiry_days'],
-    #     config['preauthorized']
-    # )
-
-    # Initialize values in Session State
-    if 'authenticator' not in st.session_state:
-        st.session_state.authenticator = auth
 
     return auth
 
@@ -79,16 +60,10 @@ def authenticate_user():
     # render_log_in_widget
     name, authentication_status, username = auth.login('Login', 'sidebar')
 
-    # to match user to ward database
-    ward_db = 'empty'
-    user_db_dict = {
-        "aturner": "dev01",
-        "bturner": "dev02",
-        'none': 'empty'
-    }
     try:
         if username:
-            ward_db = user_db_dict[username]
+            # match user to ward db with k/v pairs from the secrets toml
+            ward_db = st.secrets['user_db_dict'][username]
     except KeyError:
         ward_db = 'empty'
 
@@ -114,13 +89,7 @@ def authenticate_user():
         st.session_state.db = ward_db
         ward_db = ward_db
 
-    # st.write(st.session_state)
-    # st.write(auth)
-
     return authentication_status, ward_db
-
-    # st.write(st.session_state)
-    # st.write(auth)
 
 
 if __name__ == "__main__":
