@@ -11,7 +11,8 @@ def app():
             st.divider()
             return st.warning('You are not logged in')
         else:
-            st.title("Staff")
+            st.title(":orange[Staff]")
+            st.markdown("**:green[Hover over each column heading for help]**")
             staff_data_editor()
     except KeyError:
         st.warning('You are not logged in')

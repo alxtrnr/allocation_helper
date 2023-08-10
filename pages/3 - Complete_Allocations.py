@@ -11,9 +11,17 @@ def app():
             st.divider()
             return st.warning('You are not logged in')
         else:
-            st.title("Suggested Allocations")
-            shift = st.text_input("Day or Night shift d/N: ").upper()
-            milo_solve.solve_staff_allocation(shift)
+            st.title(":orange[Suggested Allocations]")
+            pick = st.radio(label='**:green[Shift Selector]**',
+                            options=['Days', 'Nights'],
+                            index=0, key=None, help=None, on_change=None,
+                            args=None, kwargs=None, disabled=False,
+                            horizontal=True, label_visibility="visible")
+            if pick == 'Days':
+                milo_solve.solve_staff_allocation('D')
+            else:
+                milo_solve.solve_staff_allocation('n')
+
     except KeyError:
         st.warning('You are not logged in')
 

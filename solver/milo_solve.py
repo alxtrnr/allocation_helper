@@ -170,9 +170,9 @@ def solve_staff_allocation(shift):
     problem.writeLP('allocations.lp')
 
     # Print the status of the solution
-    st.write("Status:", pulp.LpStatus[problem.status])
     if pulp.LpStatus[problem.status] == 'Infeasible':
-        exit('You need more staff!')
+        st.write(f"**:red[Status: {pulp.LpStatus[problem.status]}]**")
+        exit()
 
     print_results(staff, observations, assignments, shift)
     return staff, observations, assignments

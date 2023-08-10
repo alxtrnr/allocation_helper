@@ -17,7 +17,7 @@ def connect_database():
 
 
 def add_staff():
-    st.markdown("#### Add Staff")
+    st.markdown("#### :blue[Add Staff]")
     staff_table = allocations_db_tables()[0]
     with connect_database() as db_session:
         name = st.text_input("staff_name", key="staff_name",
@@ -46,7 +46,7 @@ def add_staff():
 
 
 def add_patient():
-    st.markdown("#### Add Patient")
+    st.markdown("#### :blue[Add Patient]")
     patient_table = allocations_db_tables()[1]
     with connect_database() as db_session:
         name = st.text_input("patient_name", key='patient_name',
@@ -130,28 +130,35 @@ def staff_data_editor():
                                          column_config={
                                              'Name': st.column_config.TextColumn(
                                                  label=None, width="small",
-                                                 help=None, disabled=None,
-                                                 required=None, default="Name",
-                                                 max_chars=None, validate=None),
+                                                 help="Enter staff name",
+                                                 disabled=None, required=None,
+                                                 default="Name", max_chars=None,
+                                                 validate=None),
 
                                              'Role': st.column_config.SelectboxColumn(
                                                  label='Role', width="small",
-                                                 help=None, disabled=None,
-                                                 required=None, default=None,
+                                                 help="Select role from the "
+                                                      "dropdown box",
+                                                 disabled=None, required=None,
+                                                 default=None,
                                                  options=['HCA', 'RMN']),
 
                                              'Gender': st.column_config.SelectboxColumn(
                                                  label=None, width="small",
-                                                 help=None, disabled=None,
-                                                 required=None, default=None,
+                                                 help="Select gender from the"
+                                                      "dropdown box",
+                                                 disabled=None, required=None,
+                                                 default=None,
                                                  options=['M', 'F']),
 
                                              'Assign': st.column_config.CheckboxColumn(
                                                  label='Allocations',
                                                  width="small",
-                                                 help='Use the checkbox to '
-                                                      'assign staff for '
-                                                      'observations'),
+                                                 help='Assign staff on/off to '
+                                                      'observations',
+                                                 disabled=None,
+                                                 required=None, default=None
+                                             ),
 
                                              'String': st.column_config.SelectboxColumn(
                                                  label="Selector",
@@ -340,7 +347,9 @@ def patient_data_editor():
                                            column_config={
                                                'Name': st.column_config.TextColumn(
                                                    label=None, width="small",
-                                                   help=None, disabled=None,
+                                                   help="Enter the patient's "
+                                                        "name",
+                                                   disabled=None,
                                                    required=None,
                                                    default="Name",
                                                    max_chars=None,
@@ -400,7 +409,7 @@ def patient_data_editor():
                                                    options=staff),
 
                                                'Omit Staff': st.column_config.TextColumn(
-                                                   label="Exclude from obs",
+                                                   label="Excluded from obs",
                                                    width="small",
                                                    help="Named staff will not "
                                                         "be allocated to "
@@ -474,7 +483,7 @@ def patient_data_editor():
 
 
 def delete_staff():
-    st.markdown("#### Delete Staff")
+    st.markdown("#### :red[Delete Staff]")
     with connect_database() as db_session:
         staff_table = allocations_db_tables()[0]
 
@@ -496,7 +505,7 @@ def delete_staff():
 
 
 def delete_patient():
-    st.markdown("#### Delete Patient")
+    st.markdown("#### :red[Delete Patient]")
     with connect_database() as db_session:
         staff_table = allocations_db_tables()[0]
         patient_table = allocations_db_tables()[1]

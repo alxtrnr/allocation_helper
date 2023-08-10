@@ -42,6 +42,7 @@ def export_to_csv(data, headers, filename, index=None, index_label=''):
 
 
 def print_results(staff, observations, assignments, shift):
+    tab1, tab2 = st.tabs(["Table1", "Table2"])
     # each item (time) in the shift_hours list is used as the label for each
     # respective row in the table
     shift_hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00'
@@ -56,7 +57,7 @@ def print_results(staff, observations, assignments, shift):
     ob_names = [o["name"] for o in observations if
                 int(o["observation_level"]) >= 1]
     observations_names = [
-        f"{o['name']} {o['observation_level']}:1 | {o['obs_type']} | rm. " 
+        f"{o['name']} {o['observation_level']}:1 | {o['obs_type']} | rm. "
         f"{o['room_number']}" for o in observations if
         int(o["observation_level"]) >= 1]
     assignments_dict = get_staff_assignments(staff, observations, assignments)
@@ -71,8 +72,13 @@ def print_results(staff, observations, assignments, shift):
     df_t1 = pd.DataFrame(data)
     df_t1.index = shift_hours
     df_t1 = df_t1.rename(columns=dict(zip(df_t1.columns, headers)))
-    st.write("##### Table 1: Patient names / observations along the top.")
-    st.dataframe(df_t1, width=1200, height=455)
+
+    with tab1:
+        st.write("##### :orange[Patient names are along the top]")
+        st.dataframe(df_t1, width=1200, height=455)
+        st.download_button(label="Download Table 1 as an editable CSV file",
+                           data=open('patient_col.csv', 'rb'),
+                           file_name='table1.csv', mime='text/csv')
 
     # Table 2: Staff names are column headers. Rows labels are shift hours.
     # Each cell contains the patient the staff member(s) are allocated to at
@@ -104,9 +110,12 @@ def print_results(staff, observations, assignments, shift):
     total_row = df_t2.loc["TOTAL"]
     total_row_int = total_row.astype(int)
     df_t2 = df_t2.loc[:, total_row_int >= 1]
-
-    st.write("##### Table 2: Staff names along the top")
-    st.dataframe(df_t2, width=1200, height=490)
+    with tab2:
+        st.write("##### :orange[Staff names are along the top]")
+        st.dataframe(df_t2, width=1200, height=490)
+        st.download_button(label="Download Table 2 as an editable CSV file",
+                           data=open('staff_col.csv', 'rb'),
+                           file_name='table2.csv', mime='text/csv')
 
     # add the row index as a column in the DataFrames
     df_t1.insert(0, '', df_t1.index)
@@ -131,12 +140,7 @@ def print_results(staff, observations, assignments, shift):
     st.download_button(label="Download Tables as a PDF",
                        data=open('tables.pdf', 'rb'), file_name='tables.pdf',
                        mime='pdf/a4')
-    st.download_button(label="Download Table 1 as an editable CSV file",
-                       data=open('patient_col.csv', 'rb'),
-                       file_name='table1.csv', mime='text/csv')
-    st.download_button(label="Download Table 2 as an editable CSV file",
-                       data=open('staff_col.csv', 'rb'),
-                       file_name='table2.csv', mime='text/csv')
+
     # st.download_button(
     #     label='Download CSV',
     #     data=csv.encode(),
