@@ -1,7 +1,7 @@
-# ass_staff_details.py
+# 3 - Complete_Allocations.py
 
 import streamlit as st
-from database_utils.database_operations import add_staff
+from solver import milo_solve
 
 
 def app():
@@ -11,8 +11,9 @@ def app():
             st.divider()
             return st.warning('You are not logged in')
         else:
-            st.title("Add Staff Details")
-            add_staff()
+            st.title("Suggested Allocations")
+            shift = st.text_input("Day or Night shift d/N: ").upper()
+            milo_solve.solve_staff_allocation(shift)
     except KeyError:
         st.warning('You are not logged in')
 

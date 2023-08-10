@@ -1,5 +1,7 @@
+# 2 - Staff.py
+
 import streamlit as st
-from database_utils.database_operations import editable_staff_table
+from database_utils.database_operations import staff_data_editor
 
 
 def app():
@@ -10,9 +12,7 @@ def app():
             return st.warning('You are not logged in')
         else:
             st.title("Staff")
-            st.write("Use the checkbox to change status of staff being "
-                     "assigned unassigned for observations.")
-            editable_staff_table()
+            staff_data_editor()
     except KeyError:
         st.warning('You are not logged in')
 

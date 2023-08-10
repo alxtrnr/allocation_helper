@@ -110,7 +110,7 @@ def solve_staff_allocation(shift):
     # Ensure staff are only assigned to a specific patient(s)
     for s in staff:
         for o in observations:
-            if o["name"] in s["cherry_pick"]:
+            if o["name"] in s["special_list"]:
                 for t in range(12):
                     if assignments[(s["id"], o["id"], t)] == 1:
                         # set all other assignments for this staff to 0 for

@@ -17,18 +17,18 @@ def connect_database():
 
 
 def add_staff():
+    st.markdown("#### Add Staff")
     staff_table = allocations_db_tables()[0]
     with connect_database() as db_session:
-        name = st.text_input("Enter staff name: ", key="staff_name").title()
-        role = st.text_input("Enter staff role: ",
-                             key="staff_role").upper().strip() or None
-        gender = st.text_input("Enter staff gender (m/f): ",
-                               key="staff_gender").upper().strip()
-        if st.button("Save"):
+        name = st.text_input("staff_name", key="staff_name",
+                             label_visibility='hidden',
+                             placeholder='Name').title()
+
+        if st.button(":blue[**Add Staff**]"):
             staff = staff_table(
                 name=name,
-                role=role,
-                gender=gender,
+                role='HCA',
+                gender='F',
                 assigned=False,
                 start_time=0,
                 end_time=12,
@@ -38,6 +38,7 @@ def add_staff():
                 db_session.add(staff)
                 db_session.commit()
                 st.write(f"{name} has been added to the staff database!")
+                st.experimental_rerun()
             except Exception as e:
                 st.write("Error occurred while adding staff:", str(e))
                 logging.error("Error occurred while adding staff:",
@@ -45,187 +46,54 @@ def add_staff():
 
 
 def add_patient():
+    st.markdown("#### Add Patient")
     patient_table = allocations_db_tables()[1]
     with connect_database() as db_session:
-        name = st.text_input("Name", key='add_patient').title()
-        observation_level = st.text_input("Observation level ", key="obs_level")
-        obs_type = st.text_input(
-            "Observation details e.g. eyesight, arms-length, no bathroom "
-            "privacy... ")
-        room_number = st.text_input("Room number", key="room_number")
-        gender_req = st.text_input("Staff gender required for obs m/f: ",
-                                   key="gender_req", autocomplete=None).upper()
-        if st.button("Save"):
+        name = st.text_input("patient_name", key='patient_name',
+                             label_visibility="hidden",
+                             placeholder="Name").title()
+
+        if st.button(":blue[**Add Patient**]"):
             patient = patient_table(
                 name=name,
-                observation_level=observation_level,
-                obs_type=obs_type,
-                room_number=room_number,
-                gender_req=gender_req
+                observation_level=0,
+                obs_type=None,
+                room_number=None,
+                gender_req=None
             )
             try:
                 db_session.add(patient)
                 db_session.commit()
                 st.write(f"{name} has been added to the patient database!")
+                st.experimental_rerun()
             except Exception as e:
                 st.write("Error occurred while adding patient:", str(e))
                 logging.error("Error occurred while adding patient:",
                               exc_info=True)
 
 
-def update_staff():
+def staff_data_editor():
+    day_converter = {'08:00': 0, '09:00': 1, '10:00': 2, '11:00': 3,
+                     '12:00': 4, '13:00': 5, '14:00': 6, '15:00': 7,
+                     '16:00': 8, '17:00': 9, '18:00': 10,
+                     '19:00': 11}
+    night_converter = {'20:00': 0, '21:00': 1, '22:00': 2,
+                       '23:00': 3,
+                       '00:00': 4, '01:00': 5, '02:00': 6,
+                       '03:00': 7,
+                       '04:00': 8, '05:00': 9, '06:00': 10,
+                       '07:00': 11}
+    converter = {**day_converter, **night_converter}
+    day_set = set(day_converter)
+    night_set = set(night_converter)
+    hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00',
+             '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
+             '20:00', '21:00', '22:00', '23:00', '00:00', '01:00',
+             '02:00', '03:00', '04:00', '05:00', '06:00', '07:00'
+             ]
     staff_table = allocations_db_tables()[0]
     patient_table = allocations_db_tables()[1]
-    with connect_database() as db_session:
-        staff_name = st.text_input("Enter staff name to update: ",
-                                   key="staff_to_update").title()
-        if staff_name:
-            staff = db_session.query(staff_table).filter_by(
-                name=staff_name).first()
 
-            if staff is not None:
-                staff.name = st.text_input(
-                    f"Enter staff name (ignore to keep {staff.name}): ",
-                    key="change_name",
-                    placeholder=staff.name).title() or staff.name
-
-                staff.role = st.text_input(
-                    "Enter staff role (ignore to keep existing role): ",
-                    key="change_role",
-                    placeholder=staff.role) or staff.role
-
-                staff.gender = st.text_input(
-                    "Enter staff gender (ignore to keep existing gender): ",
-                    key="change_gender",
-                    placeholder=staff.gender).upper() or staff.gender
-
-                if st.button("Assign / Unassigned"):
-                    # Negate the current value of staff.assigned
-                    staff.assigned = not staff.assigned  # Toggles boolean
-
-                # Let user know the current assignment status
-                st.write(
-                    f"Assignment status: {staff.assigned}")
-
-                # Prompt to enter the start and end times for the staff member
-                start_time = st.text_input("Enter start time HH:MM: ",
-                                           key="start_time")
-                end_time = st.text_input("Enter end time HH:MM: ",
-                                         key="end_time")
-
-                day_converter = {'08:00': 0, '09:00': 1, '10:00': 2, '11:00': 3,
-                                 '12:00': 4, '13:00': 5, '14:00': 6, '15:00': 7,
-                                 '16:00': 8, '17:00': 9, '18:00': 10,
-                                 '19:00': 11}
-                night_converter = {'20:00': 0, '21:00': 1, '22:00': 2,
-                                   '23:00': 3,
-                                   '00:00': 4, '01:00': 5, '02:00': 6,
-                                   '03:00': 7,
-                                   '04:00': 8, '05:00': 9, '06:00': 10,
-                                   '07:00': 11}
-                converter = {**day_converter, **night_converter}
-
-                day_set = set(day_converter)
-                night_set = set(night_converter)
-
-                if start_time in day_set:
-                    staff.start_time = day_converter[start_time]
-                    staff.start = start_time
-                elif start_time in night_set:
-                    staff.start_time = night_converter[start_time]
-                    staff.start = start_time
-                else:
-                    staff.start_time = 0
-                    staff.end_time = 12
-
-                if end_time in day_set:
-                    staff.end_time = day_converter[end_time]
-                    staff.end = end_time
-                elif end_time in night_set:
-                    staff.end_time = night_converter[end_time]
-                    staff.end = end_time
-                else:
-                    staff.start_time = 0
-                    staff.end_time = 12
-
-                staff.duration = staff.end_time - staff.start_time
-                try:
-                    db_session.commit()
-                    st.write("Staff updated successfully.")
-                except Exception as e:
-                    st.write("Error occurred while updating staff:", str(e))
-                    logging.error("Error occurred while updating staff:",
-                                  exc_info=True)
-
-                # Omit times logic
-                ui_times = st.text_input(
-                    f"Enter the hours(s) that {staff.name} should not be "
-                    f"allocated to observations (ignore to keep existing "
-                    f"status): ",
-                    placeholder=staff.omit).split()
-
-                if ui_times:
-                    # clears the current status
-                    staff.omit_time.clear()
-                    staff.omit = ''
-
-                    # st.write(converter)
-                    # st.write(ui_times)
-
-                    # converts ui times into 12-hour range for processing
-                    modified_times = [converter[time] for time in ui_times if
-                                      time in converter]
-
-                    # To update both time formats in the staff table
-                    time_pairs = zip(modified_times, ui_times)
-                    for i, s in list(time_pairs):
-                        staff.omit_time.append(i)
-                        staff.omit += s + ' '
-
-                    st.write(
-                        f"{staff.omit} added to omitted times for {staff.name}.")
-
-                # Prompt user to enter the patient name to add or remove from
-                # the staff's cherry-pick list
-                patient_name = st.text_input("Enter patient name to add or "
-                                             "remove from staff's cherry_pick "
-                                             "list (press enter to keep "
-                                             "existing status): ",
-                                             placeholder=staff.cherry_pick).title()
-
-                if patient_name:
-                    # Retrieve the patient from the database
-                    patient = db_session.query(patient_table).filter_by(
-                        name=patient_name).first()
-
-                    # If the patient is found in the database
-                    if patient:
-                        # If the patient name is already in the cherry-pick
-                        # list, remove it
-                        if patient.name in staff.cherry_pick:
-                            staff.cherry_pick.remove(patient.name)
-                            st.write(f"Patient {patient.name} removed from "
-                                     f"cherry-list for staff {staff.name}.")
-                        else:
-                            # Otherwise, add the patient name to the omit list
-                            staff.cherry_pick.append(patient.name)
-                            st.write(
-                                f"Patient {patient.name} added to cherry-pick "
-                                f"list for staff {staff.name}.")
-                        db_session.commit()
-
-                    else:
-                        st.write("Patient not found.")
-                if st.button("Save"):
-                    db_session.commit()
-                    st.write("Staff updated successfully.")
-            else:
-                st.write("Staff not found.")
-    db_session.commit()
-
-
-def editable_staff_table():
-    staff_table = allocations_db_tables()[0]
     with connect_database() as db_session:
         # Construct the query to retrieve staff data from the database
         query = select(
@@ -233,62 +101,235 @@ def editable_staff_table():
             staff_table.role,
             staff_table.gender,
             staff_table.assigned,
-            staff_table.cherry_pick,
+            staff_table.special_string,
+            staff_table.special_list,
             staff_table.start,
             staff_table.end,
             staff_table.omit
         )
 
+        patients_names = select(patient_table.name)
+
         # Execute the query and fetch the results
         result = db_session.execute(query)
-        staff_data = result.fetchall()
+        staff_data = result.all()
+
+        p_names = db_session.execute(patients_names)
+        patients = [name[0] for name in p_names.all()]
 
         # Convert staff_data into a Pandas DataFrame
-        column_names = ['Name', 'Role', 'Gender', 'Assigned', 'Special',
-                        'Start', 'End', 'Omit']
+        column_names = ['Name', 'Role', 'Gender', 'Assign', 'String',
+                        'Cherry Pick', 'Start', 'End', 'Omit']
         staff_df = pd.DataFrame(staff_data, columns=column_names)
 
         # This renders a data editor widget with the staff table data
         edited_staff_df = st.data_editor(data=staff_df,
                                          width=1200,
                                          height=625,
+                                         hide_index=True,
                                          column_config={
-                                             'Assigned': st.column_config.CheckboxColumn()},
-                                         key="staff_to_assign")
+                                             'Name': st.column_config.TextColumn(
+                                                 label=None, width="small",
+                                                 help=None, disabled=None,
+                                                 required=None, default="Name",
+                                                 max_chars=None, validate=None),
 
-        # Update staff assignment based on the edited DataFrame
-        for _, row in edited_staff_df.iterrows():
-            staff_name = row['Name'].title()
-            staff = db_session.query(allocations_db_tables()[0]).filter_by(
-                name=staff_name).first()
+                                             'Role': st.column_config.SelectboxColumn(
+                                                 label='Role', width="small",
+                                                 help=None, disabled=None,
+                                                 required=None, default=None,
+                                                 options=['HCA', 'RMN']),
 
-            if staff.assigned != row['Assigned']:
-                staff.assigned = row['Assigned']
+                                             'Gender': st.column_config.SelectboxColumn(
+                                                 label=None, width="small",
+                                                 help=None, disabled=None,
+                                                 required=None, default=None,
+                                                 options=['M', 'F']),
 
-        # Commit the changes to the database
+                                             'Assign': st.column_config.CheckboxColumn(
+                                                 label='Allocations',
+                                                 width="small",
+                                                 help='Use the checkbox to '
+                                                      'assign staff for '
+                                                      'observations'),
+
+                                             'String': st.column_config.SelectboxColumn(
+                                                 label="Selector",
+                                                 width="small",
+                                                 help='Select from the drop '
+                                                      'down box to add/remove '
+                                                      'patient(s) cherry picked '
+                                                      'for this staff.',
+                                                 disabled=None,
+                                                 required=None, default=None,
+                                                 options=patients),
+
+                                             'Cherry Pick': st.column_config.TextColumn(
+                                                 label=None, width="small",
+                                                 help='Only assign to obs for '
+                                                      'the names shown',
+                                                 disabled=True,
+                                                 required=None, default=None),
+
+                                             'Start': st.column_config.SelectboxColumn(
+                                                 label="Start Time",
+                                                 width="small",
+                                                 help="Start time is the normal"
+                                                      " time for d/n shift "
+                                                      "unless a custom time is "
+                                                      "specified below.",
+                                                 disabled=None, required=None,
+                                                 default=None, options=hours),
+
+                                             'End': st.column_config.SelectboxColumn(
+                                                 label="End Time",
+                                                 width="small",
+                                                 help="End time is the normal"
+                                                      " time for d/n shift "
+                                                      "unless a custom time is "
+                                                      "specified below.",
+                                                 disabled=None,
+                                                 required=None, default=None,
+                                                 options=hours),
+
+                                             'Omit': st.column_config.TextColumn(
+                                                 label=None, width="small",
+                                                 help='HH:00 separated by a '
+                                                      'space for any time when '
+                                                      'observations should not '
+                                                      'be assigned',
+                                                 disabled=None,
+                                                 required=None, default=None,
+                                                 max_chars=None,
+                                                 # hh:mm or hh:mm hh:mm...
+                                                 validate="^(?:([01][0-9]|2[0-3]):00(?:\s|$))+"),
+                                         },
+                                         key="staff_df"
+                                         )
+
+        df_names = [row['Name'].title() for _, row in
+                    edited_staff_df.iterrows()]
+        df_role = [row['Role'].upper() for _, row in
+                   edited_staff_df.iterrows()]
+        df_gender = [row['Gender'].upper() for _, row in
+                     edited_staff_df.iterrows()]
+        df_assign = [row['Assign'] for _, row in
+                     edited_staff_df.iterrows()]
+        df_start = [row['Start'].title() for _, row in
+                    edited_staff_df.iterrows()]
+        df_end = [row['End'].title() for _, row in
+                  edited_staff_df.iterrows()]
+        df_omit = [row['Omit'] for _, row in
+                   edited_staff_df.iterrows()]
+        df_special = [row['String'] for _, row in
+                      edited_staff_df.iterrows()]
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_names):
+            if db_entry.name != df_entry:
+                db_entry.name = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_role):
+            if db_entry.role != df_entry:
+                db_entry.role = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_gender):
+            if db_entry.gender != df_entry:
+                db_entry.gender = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_assign):
+            if db_entry.assigned != df_entry:
+                db_entry.assigned = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_start):
+            if db_entry.start != df_entry:
+                db_entry.start = df_entry
+                if df_entry in day_set:
+                    db_entry.start_time = day_converter[df_entry]
+                elif df_entry in night_set:
+                    db_entry.start_time = night_converter[df_entry]
+                else:
+                    db_entry.start_time = 0
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_end):
+            if db_entry.end != df_entry:
+                db_entry.end = df_entry
+                if df_entry in day_set:
+                    db_entry.end_time = day_converter[df_entry]
+                elif df_entry in night_set:
+                    db_entry.end_time = night_converter[df_entry]
+                else:
+                    db_entry.end_time = 12
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_omit):
+            if db_entry.omit != df_entry:
+                db_entry.omit = df_entry
+                db_entry.omit_time.clear()
+                df_entry_list = df_entry.split()
+
+                # converts ui times into 12-hour range for processing
+                modified_times = [converter[time] for time in df_entry_list if
+                                  time in converter]
+
+                # To update both time formats in the staff table
+                time_pairs = zip(modified_times, df_entry)
+                for i, s in list(time_pairs):
+                    db_entry.omit_time.append(i)
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[0]), df_special):
+            if df_entry:
+                if df_entry not in db_entry.special_list:
+                    db_entry.special_list.append(df_entry)
+                elif df_entry in db_entry.special_list:
+                    db_entry.special_list.pop(
+                        db_entry.special_list.index(df_entry))
+                db_session.commit()
+                st.experimental_rerun()
+            else:
+                continue
+
         db_session.commit()
 
+        col1, col2 = st.columns(2)
+        with col1:
+            add_staff()
+        with col2:
+            delete_staff()
 
-def editable_patient_table():
+
+def patient_data_editor():
+    staff_table = allocations_db_tables()[0]
     patient_table = allocations_db_tables()[1]
+
     with connect_database() as db_session:
-        # Construct the query to retrieve staff data from the database
+        # Construct query to retrieve patient data from the database
         query = select(
             patient_table.name,
             patient_table.observation_level,
             patient_table.obs_type,
             patient_table.room_number,
             patient_table.gender_req,
+            patient_table.omit_staff_selector,
             patient_table.omit_staff
         )
-
-        # Execute the query and fetch the results
         result = db_session.execute(query)
         patient_data = result.fetchall()
 
+        # Construct query to retrieve staff data from the database
+        staff_names = select(staff_table.name)
+        s_names = db_session.execute(staff_names)
+        staff = [name[0] for name in s_names.all()]
+
         # Convert patient_data into a Pandas DataFrame
-        column_names = ['Name', 'Obs Level', 'Obs Type', 'Room No.',
-                        'Gender Reqs', 'Omit Staff']
+        column_names = ['Name', 'Obs Level', 'Obs Type', 'Room No',
+                        'Gender Reqs', 'Selector', 'Omit Staff']
         patient_df = pd.DataFrame(patient_data, columns=column_names)
 
         # This renders a data editor widget with the patient table data
@@ -296,124 +337,187 @@ def editable_patient_table():
                                            width=1200,
                                            height=625,
                                            hide_index=True,
-                                           on_change=None,
-                                           key="patient_details")
+                                           column_config={
+                                               'Name': st.column_config.TextColumn(
+                                                   label=None, width="small",
+                                                   help=None, disabled=None,
+                                                   required=None,
+                                                   default="Name",
+                                                   max_chars=None,
+                                                   validate=None),
 
-        for _, row in edited_patient_df.iterrows():
-            patient_name = row[0]
-            patient = db_session.query(allocations_db_tables()[1]).filter_by(
-                name=patient_name).first()
+                                               'Obs Level': st.column_config.SelectboxColumn(
+                                                   label=None, width="small",
+                                                   help="Select the obs level "
+                                                        "0 = Generals, 1 = 1:1,"
+                                                        " 2 = 2:1 and so on...",
+                                                   disabled=None,
+                                                   required=None, default=0,
+                                                   options=[0, 1, 2, 3, 4]),
 
+                                               'Obs Type': st.column_config.TextColumn(
+                                                   label=None, width="large",
+                                                   help='Any details e.g. '
+                                                        'arms-length, eyesight '
+                                                        'or bathroom privacy',
+                                                   disabled=None, required=None,
+                                                   default=None, max_chars=None,
+                                                   validate=None),
 
-def update_patient():
-    staff_table = allocations_db_tables()[0]
-    patient_table = allocations_db_tables()[1]
-    with connect_database() as db_session:
-        # Displays the patient table
-        editable_patient_table()
+                                               'Room No': st.column_config.SelectboxColumn(
+                                                   label=None, width="small",
+                                                   help="Select the room "
+                                                        "number.",
+                                                   disabled=None,
+                                                   required=None, default=None,
+                                                   options=['01', '02', '03',
+                                                            '04', '05', '06',
+                                                            '07', '08', '09',
+                                                            '10', '11', '12',
+                                                            '13', '14', '15',
+                                                            '16']),
 
-        # Prompt user to enter the patient to update
-        patient_name = st.text_input("Enter patient name to update: ",
-                                     key="select_patient")
-        if patient_name:
-            # Retrieve the patient from the database
-            patient = db_session.query(patient_table).filter_by(
-                name=patient_name).first()
+                                               'Gender Reqs': st.column_config.SelectboxColumn(
+                                                   label=None, width="small",
+                                                   help="If specified only"
+                                                        " male or female staff "
+                                                        "will be assigned to "
+                                                        "the patients obs.",
+                                                   disabled=None,
+                                                   required=None,
+                                                   default=None,
+                                                   options=["F", "M"]),
 
-            # If the patient is found in the database
-            if patient:
-                # Update basic details
-                patient.name = st.text_input(
-                    f"Enter patient name (ignore to keep {patient.name}): ",
-                    key="change_p_name").title() or \
-                               patient.name
-                patient.observation_level = st.text_input(
-                    f"Enter patient obs level (ignore to keep as "
-                    f"{patient.observation_level}): ",
-                    key="change_obs_level") or patient.observation_level
-                patient.obs_type = st.text_input(
-                    f"Enter patient obs type (ignore to keep as {patient.obs_type}): ",
-                    key="change_obs_type") or patient.obs_type
-                patient.room_number = st.text_input(
-                    f"Enter patient room number (ignore to keep as "
-                    f"{patient.room_number}): ") or patient.room_number
-                patient.gender_req = st.text_input(
-                    "Enter any gender req m/f (press enter to clear all req): ",
-                    key="change_gender").upper()
+                                               'Selector': st.column_config.SelectboxColumn(
+                                                   label="Selector",
+                                                   width="small",
+                                                   help='Select from the drop '
+                                                        'down box to exclude '
+                                                        'staff from this '
+                                                        'patients observations.',
+                                                   disabled=None,
+                                                   required=None, default=None,
+                                                   options=staff),
 
-                # Omit list logic
-                staff_name = st.text_input(
-                    "Enter staff name to add or remove from omit_time_str list "
-                    "(enter for no change): ", key="omit_list",
-                    placeholder=patient.omit_staff)
+                                               'Omit Staff': st.column_config.TextColumn(
+                                                   label="Exclude from obs",
+                                                   width="small",
+                                                   help="Named staff will not "
+                                                        "be allocated to "
+                                                        "observations for "
+                                                        "this patient",
+                                                   disabled=True, required=None,
+                                                   default="Name",
+                                                   max_chars=None,
+                                                   validate=None),
+                                           },
+                                           key="patient_df"
+                                           )
 
-                # Checks if the staff name is already in the omit list. If
-                # true the db column is updated to remove it.
-                if staff_name in patient.omit_staff:
-                    patient.omit_staff = patient.omit_staff.remove(staff_name)
-                    db_session.commit()
-                    st.write(
-                        f"Staff {staff_name} removed from omit list for "
-                        f"patient {patient.name}.")
-                else:
-                    # Retrieve the staff with the given name from the database
-                    staff = db_session.query(staff_table).filter_by(
-                        name=staff_name).first()
+        df_names = [row['Name'] for _, row in edited_patient_df.iterrows()]
+        df_obs_level = [row['Obs Level'] for _, row in
+                        edited_patient_df.iterrows()]
+        df_obs_type = [row['Obs Type'] for _, row in
+                       edited_patient_df.iterrows()]
+        df_room_no = [row['Room No'] for _, row in
+                      edited_patient_df.iterrows()]
+        df_gender_req = [row['Gender Reqs'] for _, row in
+                         edited_patient_df.iterrows()]
+        df_selector = [row['Selector'] for _, row in
+                       edited_patient_df.iterrows()]
 
-                    # If the staff is found in the database
-                    if staff:
-                        # Add the staff id to the omit_time_str list
-                        patient.omit_staff.append(staff.name)
-                        st.write(f"Staff {staff.name} added to omit list for "
-                                 f"patient {patient.name}.")
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[1]), df_names):
+            if db_entry.name != df_entry:
+                db_entry.name = df_entry
 
-                        db_session.commit()  # Save the changes to the database
-                    else:
-                        st.write("Staff not found.")
-                if st.button("Save"):
-                    db_session.commit()
-                    st.write("Patient updated successfully.")
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[1]), df_obs_level):
+            if db_entry.observation_level != df_entry:
+                db_entry.observation_level = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[1]), df_obs_type):
+            if db_entry.obs_type != df_entry:
+                db_entry.obs_type = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[1]), df_room_no):
+            if db_entry.room_number != df_entry:
+                db_entry.room_number = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[1]), df_gender_req):
+            if db_entry.gender_req != df_entry:
+                db_entry.gender_req = df_entry
+
+        for db_entry, df_entry in zip(
+                db_session.query(allocations_db_tables()[1]), df_selector):
+            if df_entry:
+                if df_entry not in db_entry.omit_staff:
+                    db_entry.omit_staff.append(df_entry)
+                elif df_entry in db_entry.omit_staff:
+                    db_entry.omit_staff.pop(
+                        db_entry.omit_staff.index(df_entry))
+                db_session.commit()
+                st.experimental_rerun()
             else:
-                st.write("Patient not found.")
+                continue
+
+        db_session.commit()
+
+        col1, col2 = st.columns(2)
+        with col1:
+            add_patient()
+        with col2:
+            delete_patient()
 
 
 def delete_staff():
+    st.markdown("#### Delete Staff")
     with connect_database() as db_session:
         staff_table = allocations_db_tables()[0]
-        editable_staff_table()
-        staff_name = st.text_input("Enter staff name to delete: ",
-                                   key="del_staff").title()
-        staff = db_session.query(staff_table).filter_by(
-            name=staff_name).first()
-        if staff_name:
-            if staff is not None:
-                db_session.delete(staff)
-                db_session.commit()
-                st.write(f"{staff.name} has been deleted")
-            else:
-                st.write("Staff not found.")
+
+        slist = [s.name for s in db_session.query(staff_table)]
+
+        staff_selector = st.selectbox('**:red[Delete]**',
+                                      options=slist, index=0,
+                                      key="delete_staff_selector", help=None,
+                                      on_change=None, args=None, kwargs=None,
+                                      placeholder="Select...", disabled=False,
+                                      label_visibility="hidden")
+
+        if st.button("**:red[Delete Staff]**"):
+            for s in db_session.query(staff_table):
+                if s.name == staff_selector:
+                    db_session.delete(s)
+                    db_session.commit()
+                    st.experimental_rerun()
 
 
 def delete_patient():
+    st.markdown("#### Delete Patient")
     with connect_database() as db_session:
         staff_table = allocations_db_tables()[0]
         patient_table = allocations_db_tables()[1]
-        editable_patient_table()
-        patient_name = st.text_input("Enter patient name to delete: ",
-                                     key="del_patient")
-        if patient_name:
-            patient = db_session.query(patient_table).filter_by(
-                name=patient_name).first()
+        p_list = [p.name for p in db_session.query(patient_table)]
 
-            if patient is not None:
-                for staff in db_session.query(staff_table).all():
-                    if patient.name in staff.cherry_pick:
-                        staff.cherry_pick.remove(patient.name)
-                db_session.delete(patient)
-                db_session.commit()
-                st.write(f"{patient_name} deleted successfully.")
-            else:
-                st.write("Patient not found.")
+        patient_selector = st.selectbox('**:red[Delete]**',
+                                        options=p_list, index=0,
+                                        key="delete_staff_selector", help=None,
+                                        on_change=None, args=None, kwargs=None,
+                                        placeholder="Select...", disabled=False,
+                                        label_visibility="hidden")
+
+        if st.button("**:red[Delete Patient]**"):
+            for p in db_session.query(patient_table):
+                if p.name == patient_selector:
+                    for staff in db_session.query(staff_table).all():
+                        if p.name in staff.special_list:
+                            staff.special_list.remove(p.name)
+                    db_session.delete(p)
+                    db_session.commit()
+                    st.experimental_rerun()
 
 
 def view_staff():
