@@ -110,9 +110,13 @@ def print_results(staff, observations, assignments, shift):
     total_row = df_t2.loc["TOTAL"]
     total_row_int = total_row.astype(int)
     df_t2 = df_t2.loc[:, total_row_int >= 1]
+
     with tab2:
         st.write("##### :orange[Staff names are along the top]")
         st.dataframe(df_t2, width=1200, height=490)
+        # generate CSV file of table 2 for downloading
+        filename = "staff_col.csv"
+        export_to_csv(data, headers, filename, index=shift_hours)
         st.download_button(label="Download Table 2 as an editable CSV file",
                            data=open('staff_col.csv', 'rb'),
                            file_name='table2.csv', mime='text/csv')
