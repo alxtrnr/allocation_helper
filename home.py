@@ -13,7 +13,7 @@ st.set_page_config(page_title="Allocation Helper", page_icon="🔭",
                                         "/spaa_streamlit#readme"})
 
 
-def landing_blurb():
+def introduction():
     st.markdown("# The Allocations Helper")
     st.markdown(
         "### Use the Allocations Helper to assist with allocating staff to"
@@ -56,28 +56,24 @@ def authenticator_object():
     return auth
 
 
-auth = authenticator_object()
+auth_object = authenticator_object()
 ward_db = 'empty'
 
 
 def authenticate_user():
-    # render_log_in_widget
+    # This renders the login widget
     global ward_db
-    name, authentication_status, username = auth.login('Login', 'sidebar')
+    name, authentication_status, username = auth_object.login('Login', 'sidebar')
 
     try:
         if username:
-            # match user to ward db with k/v pairs from the secrets toml
+            # match user to their ward allocations database
             ward_db = st.secrets['user_db_dict'][username]
     except KeyError:
         ward_db = 'empty'
 
     # when there is no logged-in user
     if authentication_status is None:
-
-        # st.warning('Please enter your username and password')
-        for key in st.session_state.keys():
-            del st.session_state[key]
         st.session_state.db = 'empty'
         ward_db = 'empty'
 
@@ -98,5 +94,5 @@ def authenticate_user():
 
 
 if __name__ == "__main__":
-    landing_blurb()
+    introduction()
     authenticate_user()
