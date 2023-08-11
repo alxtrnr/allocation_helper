@@ -165,8 +165,8 @@ def staff_data_editor():
                                                  width="small",
                                                  help='Select from the drop '
                                                       'down box to add/remove '
-                                                      'patient(s) cherry picked '
-                                                      'for this staff.',
+                                                      'patient(s) cherry picked'
+                                                      ' for this staff.',
                                                  disabled=None,
                                                  required=None, default=None,
                                                  options=patients),
@@ -231,26 +231,42 @@ def staff_data_editor():
         df_special = [row['String'] for _, row in
                       edited_staff_df.iterrows()]
 
+        # The following conditional statements check and sync entries between
+        # the editable dataframe and database
+
+        # names
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_names):
             if db_entry.name != df_entry:
                 db_entry.name = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
+        # role
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_role):
             if db_entry.role != df_entry:
                 db_entry.role = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
+        # gender
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_gender):
             if db_entry.gender != df_entry:
                 db_entry.gender = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
+        # select / deselect for allocation
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_assign):
             if db_entry.assigned != df_entry:
                 db_entry.assigned = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
+        # start time
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_start):
             if db_entry.start != df_entry:
@@ -261,7 +277,10 @@ def staff_data_editor():
                     db_entry.start_time = night_converter[df_entry]
                 else:
                     db_entry.start_time = 0
+                db_session.commit()
+                st.experimental_rerun()
 
+        # end time
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_end):
             if db_entry.end != df_entry:
@@ -272,7 +291,10 @@ def staff_data_editor():
                     db_entry.end_time = night_converter[df_entry]
                 else:
                     db_entry.end_time = 12
+                db_session.commit()
+                st.experimental_rerun()
 
+        # omit times
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_omit):
             if db_entry.omit != df_entry:
@@ -280,15 +302,19 @@ def staff_data_editor():
                 db_entry.omit_time.clear()
                 df_entry_list = df_entry.split()
 
-                # converts ui times into 12-hour range for processing
+                # converts times entered into the dataframe to the 12-hour
+                # range for processing
                 modified_times = [converter[time] for time in df_entry_list if
                                   time in converter]
 
-                # To update both time formats in the staff table
-                time_pairs = zip(modified_times, df_entry)
-                for i, s in list(time_pairs):
-                    db_entry.omit_time.append(i)
+                # updates the database list of times (12 hour range) to be
+                # omitted
+                for twelve_hour_range in modified_times:
+                    db_entry.omit_time.append(twelve_hour_range)
+                    db_session.commit()
+                    st.experimental_rerun()
 
+        # cherry-pick
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_special):
             if df_entry:
@@ -299,16 +325,12 @@ def staff_data_editor():
                         db_entry.special_list.index(df_entry))
                 db_session.commit()
                 st.experimental_rerun()
-            else:
-                continue
 
-        db_session.commit()
-
-        col1, col2 = st.columns(2)
-        with col1:
-            add_staff()
-        with col2:
-            delete_staff()
+    col1, col2 = st.columns(2)
+    with col1:
+        add_staff()
+    with col2:
+        delete_staff()
 
 
 def patient_data_editor():
@@ -439,26 +461,36 @@ def patient_data_editor():
                 db_session.query(allocations_db_tables()[1]), df_names):
             if db_entry.name != df_entry:
                 db_entry.name = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_obs_level):
             if db_entry.observation_level != df_entry:
                 db_entry.observation_level = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_obs_type):
             if db_entry.obs_type != df_entry:
                 db_entry.obs_type = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_room_no):
             if db_entry.room_number != df_entry:
                 db_entry.room_number = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_gender_req):
             if db_entry.gender_req != df_entry:
                 db_entry.gender_req = df_entry
+                db_session.commit()
+                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_selector):
@@ -470,25 +502,19 @@ def patient_data_editor():
                         db_entry.omit_staff.index(df_entry))
                 db_session.commit()
                 st.experimental_rerun()
-            else:
-                continue
 
-        db_session.commit()
-
-        col1, col2 = st.columns(2)
-        with col1:
-            add_patient()
-        with col2:
-            delete_patient()
+    col1, col2 = st.columns(2)
+    with col1:
+        add_patient()
+    with col2:
+        delete_patient()
 
 
 def delete_staff():
     st.markdown("#### :red[Delete Staff]")
     with connect_database() as db_session:
         staff_table = allocations_db_tables()[0]
-
         slist = [s.name for s in db_session.query(staff_table)]
-
         staff_selector = st.selectbox('**:red[Delete]**',
                                       options=slist, index=0,
                                       key="delete_staff_selector", help=None,
@@ -510,7 +536,6 @@ def delete_patient():
         staff_table = allocations_db_tables()[0]
         patient_table = allocations_db_tables()[1]
         p_list = [p.name for p in db_session.query(patient_table)]
-
         patient_selector = st.selectbox('**:red[Delete]**',
                                         options=p_list, index=0,
                                         key="delete_staff_selector", help=None,
