@@ -325,24 +325,18 @@ def staff_data_editor():
                 db_session.query(allocations_db_tables()[0]), df_role):
             if db_entry.role != df_entry:
                 db_entry.role = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         # gender
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_gender):
             if db_entry.gender != df_entry:
                 db_entry.gender = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         # select / deselect for allocation
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_assign):
             if db_entry.assigned != df_entry:
                 db_entry.assigned = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         # start time
         for db_entry, df_entry in zip(
@@ -355,8 +349,6 @@ def staff_data_editor():
                     db_entry.start_time = night_converter[df_entry]
                 else:
                     db_entry.start_time = 0
-                db_session.commit()
-                st.experimental_rerun()
 
         # end time
         for db_entry, df_entry in zip(
@@ -369,8 +361,6 @@ def staff_data_editor():
                     db_entry.end_time = night_converter[df_entry]
                 else:
                     db_entry.end_time = 12
-                db_session.commit()
-                st.experimental_rerun()
 
         # omit times
         for db_entry, df_entry in zip(
@@ -389,8 +379,6 @@ def staff_data_editor():
                 # omitted
                 for twelve_hour_range in modified_times:
                     db_entry.omit_time.append(twelve_hour_range)
-                    db_session.commit()
-                    st.experimental_rerun()
 
         # cherry-pick
         for db_entry, df_entry in zip(
@@ -401,8 +389,9 @@ def staff_data_editor():
                 elif df_entry in db_entry.special_list:
                     db_entry.special_list.pop(
                         db_entry.special_list.index(df_entry))
-                db_session.commit()
-                st.experimental_rerun()
+
+            db_session.commit()
+
 
     col1, col2 = st.columns(2)
     with col1:
