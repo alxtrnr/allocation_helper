@@ -7,25 +7,50 @@ from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 from database.database_creation import allocations_db_tables
 
+STAFF_DB, PATIENT_DB, ENGINE = allocations_db_tables()
+
+
+# ---- Database Operations ----
 
 def connect_database():
-    # Instantiate the working SQLite engine.
-    engine = allocations_db_tables()[2]
-    # Construct a session-maker object and bind it to the engine
-    Session = sessionmaker(bind=engine)
+    Session = sessionmaker(bind=ENGINE)
     return Session()
 
 
+def handle_database_exception(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logging.error("Error occurred:", exc_info=True)
+            st.write(f"An error occurred: {str(e)}")
+
+    return wrapper
+
+
+@handle_database_exception
+def add_data_to_database(db_session, data):
+    db_session.add(data)
+    db_session.commit()
+
+
+@handle_database_exception
+def delete_data_from_database(db_session, data):
+    db_session.delete(data)
+    db_session.commit()
+
+
+# ---- User Interface Functions ----
+
 def add_staff():
     st.markdown("#### :blue[Add Staff]")
-    staff_table = allocations_db_tables()[0]
     with connect_database() as db_session:
         name = st.text_input("staff_name", key="staff_name",
                              label_visibility='hidden',
                              placeholder='Name').title()
 
         if st.button(":blue[**Add Staff**]"):
-            staff = staff_table(
+            staff = STAFF_DB(
                 name=name,
                 role='HCA',
                 gender='F',
@@ -34,42 +59,95 @@ def add_staff():
                 end_time=12,
                 duration=12
             )
-            try:
-                db_session.add(staff)
-                db_session.commit()
-                st.write(f"{name} has been added to the staff database!")
-                st.experimental_rerun()
-            except Exception as e:
-                st.write("Error occurred while adding staff:", str(e))
-                logging.error("Error occurred while adding staff:",
-                              exc_info=True)
+
+            add_data_to_database(db_session, staff)
+            st.write(f"{name} has been added to the staff database!")
+            st.experimental_rerun()
 
 
 def add_patient():
     st.markdown("#### :blue[Add Patient]")
-    patient_table = allocations_db_tables()[1]
     with connect_database() as db_session:
         name = st.text_input("patient_name", key='patient_name',
                              label_visibility="hidden",
                              placeholder="Name").title()
 
         if st.button(":blue[**Add Patient**]"):
-            patient = patient_table(
+            patient = PATIENT_DB(
                 name=name,
                 observation_level=0,
                 obs_type=None,
                 room_number=None,
                 gender_req=None
             )
-            try:
-                db_session.add(patient)
-                db_session.commit()
-                st.write(f"{name} has been added to the patient database!")
-                st.experimental_rerun()
-            except Exception as e:
-                st.write("Error occurred while adding patient:", str(e))
-                logging.error("Error occurred while adding patient:",
-                              exc_info=True)
+            add_data_to_database(db_session, patient)
+            st.write(f"{name} has been added to the patient database!")
+            st.experimental_rerun()
+
+
+def delete_staff():
+    st.markdown("#### :red[Delete Staff]")
+    with connect_database() as db_session:
+        slist = [s.name for s in db_session.query(STAFF_DB)]
+        staff_selector = st.selectbox('**:red[Delete]**',
+                                      options=slist, index=0,
+                                      key="delete_staff_selector", help=None,
+                                      on_change=None, args=None, kwargs=None,
+                                      placeholder="Select...", disabled=False,
+                                      label_visibility="hidden")
+
+        if st.button("**:red[Delete Staff]**"):
+            for staff in db_session.query(STAFF_DB):
+                if staff.name == staff_selector:
+                    delete_data_from_database(db_session, staff)
+                    st.experimental_rerun()
+
+
+def delete_patient():
+    st.markdown("#### :red[Delete Patient]")
+    with connect_database() as db_session:
+        p_list = [p.name for p in db_session.query(PATIENT_DB)]
+        patient_selector = st.selectbox('**:red[Delete]**',
+                                        options=p_list, index=0,
+                                        key="delete_staff_selector", help=None,
+                                        on_change=None, args=None, kwargs=None,
+                                        placeholder="Select...", disabled=False,
+                                        label_visibility="hidden")
+
+        if st.button("**:red[Delete Patient]**"):
+            for patient in db_session.query(PATIENT_DB):
+                if patient.name == patient_selector:
+                    for staff in db_session.query(STAFF_DB).all():
+                        if patient.name in staff.special_list:
+                            staff.special_list.remove(patient.name)
+                    delete_data_from_database(db_session, patient)
+                    st.experimental_rerun()
+
+
+def view_staff():
+    with connect_database() as db_session:
+        staff_list = db_session.query(STAFF_DB).all()
+        if staff_list:
+            st.write("\n".join(
+                [f"{staff.id} {staff.name} ({staff.role})" for staff in
+                 staff_list]))
+        else:
+            st.write("No staff found.")
+
+
+def view_patients():
+    with connect_database() as db_session:
+        patient_list = db_session.query(PATIENT_DB).all()
+        if patient_list:
+            for patient in patient_list:
+                omit_staff_str = ", ".join(patient.omit_staff) or "None"
+                st.write(
+                    f"{patient.id} {patient.name} (Observation level: "
+                    f"{patient.observation_level}, Room number: "
+                    f"{patient.room_number}, Gender requirement: "
+                    f"{patient.gender_req}, Staff to omit_time_str: {omit_staff_str})")
+        else:
+            st.write("No patients found.")
 
 
 def staff_data_editor():
@@ -91,24 +169,24 @@ def staff_data_editor():
              '20:00', '21:00', '22:00', '23:00', '00:00', '01:00',
              '02:00', '03:00', '04:00', '05:00', '06:00', '07:00'
              ]
-    staff_table = allocations_db_tables()[0]
+
     patient_table = allocations_db_tables()[1]
 
     with connect_database() as db_session:
         # Construct the query to retrieve staff data from the database
         query = select(
-            staff_table.name,
-            staff_table.role,
-            staff_table.gender,
-            staff_table.assigned,
-            staff_table.special_string,
-            staff_table.special_list,
-            staff_table.start,
-            staff_table.end,
-            staff_table.omit
+            STAFF_DB.name,
+            STAFF_DB.role,
+            STAFF_DB.gender,
+            STAFF_DB.assigned,
+            STAFF_DB.special_string,
+            STAFF_DB.special_list,
+            STAFF_DB.start,
+            STAFF_DB.end,
+            STAFF_DB.omit
         )
 
-        patients_names = select(patient_table.name)
+        patients_names = select(PATIENT_DB.name)
 
         # Execute the query and fetch the results
         result = db_session.execute(query)
@@ -334,25 +412,22 @@ def staff_data_editor():
 
 
 def patient_data_editor():
-    staff_table = allocations_db_tables()[0]
-    patient_table = allocations_db_tables()[1]
-
     with connect_database() as db_session:
         # Construct query to retrieve patient data from the database
         query = select(
-            patient_table.name,
-            patient_table.observation_level,
-            patient_table.obs_type,
-            patient_table.room_number,
-            patient_table.gender_req,
-            patient_table.omit_staff_selector,
-            patient_table.omit_staff
+            PATIENT_DB.name,
+            PATIENT_DB.observation_level,
+            PATIENT_DB.obs_type,
+            PATIENT_DB.room_number,
+            PATIENT_DB.gender_req,
+            PATIENT_DB.omit_staff_selector,
+            PATIENT_DB.omit_staff
         )
         result = db_session.execute(query)
         patient_data = result.fetchall()
 
         # Construct query to retrieve staff data from the database
-        staff_names = select(staff_table.name)
+        staff_names = select(STAFF_DB.name)
         s_names = db_session.execute(staff_names)
         staff = [name[0] for name in s_names.all()]
 
@@ -461,36 +536,26 @@ def patient_data_editor():
                 db_session.query(allocations_db_tables()[1]), df_names):
             if db_entry.name != df_entry:
                 db_entry.name = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_obs_level):
             if db_entry.observation_level != df_entry:
                 db_entry.observation_level = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_obs_type):
             if db_entry.obs_type != df_entry:
                 db_entry.obs_type = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_room_no):
             if db_entry.room_number != df_entry:
                 db_entry.room_number = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_gender_req):
             if db_entry.gender_req != df_entry:
                 db_entry.gender_req = df_entry
-                db_session.commit()
-                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_selector):
@@ -500,8 +565,8 @@ def patient_data_editor():
                 elif df_entry in db_entry.omit_staff:
                     db_entry.omit_staff.pop(
                         db_entry.omit_staff.index(df_entry))
-                db_session.commit()
-                st.experimental_rerun()
+
+        db_session.commit()
 
     col1, col2 = st.columns(2)
     with col1:
@@ -510,77 +575,30 @@ def patient_data_editor():
         delete_patient()
 
 
-def delete_staff():
-    st.markdown("#### :red[Delete Staff]")
-    with connect_database() as db_session:
-        staff_table = allocations_db_tables()[0]
-        slist = [s.name for s in db_session.query(staff_table)]
-        staff_selector = st.selectbox('**:red[Delete]**',
-                                      options=slist, index=0,
-                                      key="delete_staff_selector", help=None,
-                                      on_change=None, args=None, kwargs=None,
-                                      placeholder="Select...", disabled=False,
-                                      label_visibility="hidden")
+# ---- Main Function ----
 
-        if st.button("**:red[Delete Staff]**"):
-            for s in db_session.query(staff_table):
-                if s.name == staff_selector:
-                    db_session.delete(s)
-                    db_session.commit()
-                    st.experimental_rerun()
+def main():
+    st.title("Database Operations")
 
+    operation = st.sidebar.selectbox("Select Operation",
+                                     ["Add Staff", "Add Patient",
+                                      "Delete Staff", "Delete Patient"])
 
-def delete_patient():
-    st.markdown("#### :red[Delete Patient]")
-    with connect_database() as db_session:
-        staff_table = allocations_db_tables()[0]
-        patient_table = allocations_db_tables()[1]
-        p_list = [p.name for p in db_session.query(patient_table)]
-        patient_selector = st.selectbox('**:red[Delete]**',
-                                        options=p_list, index=0,
-                                        key="delete_staff_selector", help=None,
-                                        on_change=None, args=None, kwargs=None,
-                                        placeholder="Select...", disabled=False,
-                                        label_visibility="hidden")
+    if operation == "Add Staff":
+        add_staff()
+    elif operation == "Add Patient":
+        add_patient()
+    elif operation == "Delete Staff":
+        delete_staff()
+    elif operation == "Delete Patient":
+        delete_patient()
 
-        if st.button("**:red[Delete Patient]**"):
-            for p in db_session.query(patient_table):
-                if p.name == patient_selector:
-                    for staff in db_session.query(staff_table).all():
-                        if p.name in staff.special_list:
-                            staff.special_list.remove(p.name)
-                    db_session.delete(p)
-                    db_session.commit()
-                    st.experimental_rerun()
-
-
-def view_staff():
-    staff_table = allocations_db_tables()[0]
-    with connect_database() as db_session:
-        staff_list = db_session.query(staff_table).all()
-        if staff_list:
-            st.write("\n".join(
-                [f"{staff.id} {staff.name} ({staff.role})" for staff in
-                 staff_list]))
-        else:
-            st.write("No staff found.")
-
-
-def view_patients():
-    patient_table = allocations_db_tables()[1]
-    with connect_database() as db_session:
-        patient_list = db_session.query(patient_table).all()
-        if patient_list:
-            for patient in patient_list:
-                omit_staff_str = ", ".join(patient.omit_staff) or "None"
-                st.write(
-                    f"{patient.id} {patient.name} (Observation level: "
-                    f"{patient.observation_level}, Room number: "
-                    f"{patient.room_number}, Gender requirement: "
-                    f"{patient.gender_req}, Staff to omit_time_str: {omit_staff_str})")
-        else:
-            st.write("No patients found.")
+    st.sidebar.subheader("View Data")
+    if st.sidebar.button("View Staff"):
+        view_staff()
+    if st.sidebar.button("View Patients"):
+        view_patients()
 
 
 if __name__ == "__main__":
-    connect_database()
+    main()
