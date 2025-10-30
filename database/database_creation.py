@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Boolean, \
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableList
 from home import authenticate_user
+from utils.time_utils import TIME_CONVERTER, hour_str_to_index, times_list_to_indices
 
 
 def user_db_match():
@@ -53,44 +54,15 @@ def allocations_db_tables():
             self.gender = gender
             self.assigned = assigned
             self.block = block
-            self.start_time = start_time
-            self.end_time = end_time
+            self.start_time = hour_str_to_index(start_time) if isinstance(start_time, str) else start_time
+            self.end_time = hour_str_to_index(end_time) if isinstance(end_time, str) else end_time
             self.duration = duration
-            self.omit_time = omit_time or []
+            self.omit_time = times_list_to_indices(omit_time) if omit_time else []
             self.special_list = special_list or []
             self.special_string = special_string
-
-            # This is to work with 12 hours rather than 24. Avoid the time
-            # calculations involved with night shifts.
-            converter = {'08:00': 0,
-                         '09:00': 1,
-                         '10:00': 2,
-                         '11:00': 3,
-                         '12:00': 4,
-                         '13:00': 5,
-                         '14:00': 6,
-                         '15:00': 7,
-                         '16:00': 8,
-                         '17:00': 9,
-                         '18:00': 10,
-                         '19:00': 11,
-                         '20:00': 0,
-                         '21:00': 1,
-                         '22:00': 2,
-                         '23:00': 3,
-                         '00:00': 4,
-                         '01:00': 5,
-                         '02:00': 6,
-                         '03:00': 7,
-                         '04:00': 8,
-                         '05:00': 9,
-                         '06:00': 10,
-                         '07:00': 11
-                         }
-            self.start = converter.get(start_time)
-            self.end = converter.get(end_time)
-            self.omit_time_converted = [converter.get(t, 0) for t in
-                                        omit_time] if omit_time else []
+            self.start = self.start_time
+            self.end = self.end_time
+            self.omit_time_converted = self.omit_time
 
         def as_dict(self):
             return {c.name: getattr(self, c.name) for c in

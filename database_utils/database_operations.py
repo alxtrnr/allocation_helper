@@ -6,6 +6,13 @@ import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 from database.database_creation import allocations_db_tables
+from utils.time_utils import TIME_CONVERTER, CONVERTER_DAY, CONVERTER_NIGHT, hour_str_to_index, times_list_to_indices, ALL_HOURS
+from services.staff_service import add_staff_entry
+from services.patient_service import add_patient_entry
+from services.staff_service import delete_staff_entry
+from services.patient_service import delete_patient_entry
+from services.staff_service import update_staff_entry
+from services.patient_service import update_patient_entry
 
 STAFF_DB, PATIENT_DB, ENGINE = allocations_db_tables()
 
@@ -48,21 +55,17 @@ def add_staff():
         name = st.text_input("staff_name", key="staff_name",
                              label_visibility='hidden',
                              placeholder='Name').title()
-
+        # Optional: add UI fields for selecting role/gender
+        role = 'HCA'
+        gender = 'F'
+        # TODO: Could add selectable fields here like role = st.radio, etc.
         if st.button(":blue[**Add Staff**]"):
-            staff = STAFF_DB(
-                name=name,
-                role='HCA',
-                gender='F',
-                assigned=False,
-                start_time=0,
-                end_time=12,
-                duration=12
-            )
-
-            add_data_to_database(db_session, staff)
-            st.write(f"{name} has been added to the staff database!")
-            st.experimental_rerun()
+            result = add_staff_entry(db_session, name=name, role=role, gender=gender)
+            if result['success']:
+                st.write(result['message'])
+                st.experimental_rerun()
+            else:
+                st.error(result['message'])
 
 
 def add_patient():
@@ -71,18 +74,13 @@ def add_patient():
         name = st.text_input("patient_name", key='patient_name',
                              label_visibility="hidden",
                              placeholder="Name").title()
-
         if st.button(":blue[**Add Patient**]"):
-            patient = PATIENT_DB(
-                name=name,
-                observation_level=0,
-                obs_type=None,
-                room_number=None,
-                gender_req=None
-            )
-            add_data_to_database(db_session, patient)
-            st.write(f"{name} has been added to the patient database!")
-            st.experimental_rerun()
+            result = add_patient_entry(db_session, name=name)
+            if result['success']:
+                st.write(result['message'])
+                st.experimental_rerun()
+            else:
+                st.error(result['message'])
 
 
 def delete_staff():
@@ -97,10 +95,8 @@ def delete_staff():
                                       label_visibility="hidden")
 
         if st.button("**:red[Delete Staff]**"):
-            for staff in db_session.query(STAFF_DB):
-                if staff.name == staff_selector:
-                    delete_data_from_database(db_session, staff)
-                    st.experimental_rerun()
+            delete_staff_entry(db_session, staff_selector)
+            st.experimental_rerun()
 
 
 def delete_patient():
@@ -115,13 +111,8 @@ def delete_patient():
                                         label_visibility="hidden")
 
         if st.button("**:red[Delete Patient]**"):
-            for patient in db_session.query(PATIENT_DB):
-                if patient.name == patient_selector:
-                    for staff in db_session.query(STAFF_DB).all():
-                        if patient.name in staff.special_list:
-                            staff.special_list.remove(patient.name)
-                    delete_data_from_database(db_session, patient)
-                    st.experimental_rerun()
+            delete_patient_entry(db_session, patient_selector)
+            st.experimental_rerun()
 
 
 def view_staff():
@@ -151,24 +142,12 @@ def view_patients():
 
 
 def staff_data_editor():
-    day_converter = {'08:00': 0, '09:00': 1, '10:00': 2, '11:00': 3,
-                     '12:00': 4, '13:00': 5, '14:00': 6, '15:00': 7,
-                     '16:00': 8, '17:00': 9, '18:00': 10,
-                     '19:00': 11}
-    night_converter = {'20:00': 0, '21:00': 1, '22:00': 2,
-                       '23:00': 3,
-                       '00:00': 4, '01:00': 5, '02:00': 6,
-                       '03:00': 7,
-                       '04:00': 8, '05:00': 9, '06:00': 10,
-                       '07:00': 11}
-    converter = {**day_converter, **night_converter}
-    day_set = set(day_converter)
-    night_set = set(night_converter)
-    hours = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00',
-             '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
-             '20:00', '21:00', '22:00', '23:00', '00:00', '01:00',
-             '02:00', '03:00', '04:00', '05:00', '06:00', '07:00'
-             ]
+    day_converter = CONVERTER_DAY
+    night_converter = CONVERTER_NIGHT
+    converter = TIME_CONVERTER
+    day_set = set(CONVERTER_DAY)
+    night_set = set(CONVERTER_NIGHT)
+    hours = ALL_HOURS
 
     patient_table = allocations_db_tables()[1]
 
@@ -316,21 +295,32 @@ def staff_data_editor():
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_names):
             if db_entry.name != df_entry:
-                db_entry.name = df_entry
-                db_session.commit()
+                res = update_staff_entry(db_session, db_entry.id, name=df_entry)
+                if not res['success']:
+                    st.error(f"Update name failed: {res['message']}")
+                else:
+                    st.write(res['message'])
                 st.experimental_rerun()
 
         # role
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_role):
             if db_entry.role != df_entry:
-                db_entry.role = df_entry
+                res = update_staff_entry(db_session, db_entry.id, role=df_entry)
+                if not res['success']:
+                    st.error(f"Update role failed: {res['message']}")
+                else:
+                    st.write(res['message'])
 
         # gender
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[0]), df_gender):
             if db_entry.gender != df_entry:
-                db_entry.gender = df_entry
+                res = update_staff_entry(db_session, db_entry.id, gender=df_entry)
+                if not res['success']:
+                    st.error(f"Update gender failed: {res['message']}")
+                else:
+                    st.write(res['message'])
 
         # select / deselect for allocation
         for db_entry, df_entry in zip(
@@ -343,10 +333,13 @@ def staff_data_editor():
                 db_session.query(allocations_db_tables()[0]), df_start):
             if db_entry.start != df_entry:
                 db_entry.start = df_entry
+                idx = hour_str_to_index(df_entry)
                 if df_entry in day_set:
                     db_entry.start_time = day_converter[df_entry]
                 elif df_entry in night_set:
                     db_entry.start_time = night_converter[df_entry]
+                elif idx is not None:
+                    db_entry.start_time = idx
                 else:
                     db_entry.start_time = 0
 
@@ -355,10 +348,13 @@ def staff_data_editor():
                 db_session.query(allocations_db_tables()[0]), df_end):
             if db_entry.end != df_entry:
                 db_entry.end = df_entry
+                idx = hour_str_to_index(df_entry)
                 if df_entry in day_set:
                     db_entry.end_time = day_converter[df_entry]
                 elif df_entry in night_set:
                     db_entry.end_time = night_converter[df_entry]
+                elif idx is not None:
+                    db_entry.end_time = idx
                 else:
                     db_entry.end_time = 12
 
@@ -369,14 +365,7 @@ def staff_data_editor():
                 db_entry.omit = df_entry
                 db_entry.omit_time.clear()
                 df_entry_list = df_entry.split()
-
-                # converts times entered into the dataframe to the 12-hour
-                # range for processing
-                modified_times = [converter[time] for time in df_entry_list if
-                                  time in converter]
-
-                # updates the database list of times (12 hour range) to be
-                # omitted
+                modified_times = times_list_to_indices(df_entry_list)
                 for twelve_hour_range in modified_times:
                     db_entry.omit_time.append(twelve_hour_range)
 
@@ -524,27 +513,47 @@ def patient_data_editor():
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_names):
             if db_entry.name != df_entry:
-                db_entry.name = df_entry
+                res = update_patient_entry(db_session, db_entry.id, name=df_entry)
+                if not res['success']:
+                    st.error(f"Update name failed: {res['message']}")
+                else:
+                    st.write(res['message'])
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_obs_level):
             if db_entry.observation_level != df_entry:
-                db_entry.observation_level = df_entry
+                res = update_patient_entry(db_session, db_entry.id, observation_level=df_entry)
+                if not res['success']:
+                    st.error(f"Update observation level failed: {res['message']}")
+                else:
+                    st.write(res['message'])
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_obs_type):
             if db_entry.obs_type != df_entry:
-                db_entry.obs_type = df_entry
+                res = update_patient_entry(db_session, db_entry.id, obs_type=df_entry)
+                if not res['success']:
+                    st.error(f"Update obs type failed: {res['message']}")
+                else:
+                    st.write(res['message'])
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_room_no):
             if db_entry.room_number != df_entry:
-                db_entry.room_number = df_entry
+                res = update_patient_entry(db_session, db_entry.id, room_number=df_entry)
+                if not res['success']:
+                    st.error(f"Update room number failed: {res['message']}")
+                else:
+                    st.write(res['message'])
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_gender_req):
             if db_entry.gender_req != df_entry:
-                db_entry.gender_req = df_entry
+                res = update_patient_entry(db_session, db_entry.id, gender_req=df_entry)
+                if not res['success']:
+                    st.error(f"Update gender req failed: {res['message']}")
+                else:
+                    st.write(res['message'])
 
         for db_entry, df_entry in zip(
                 db_session.query(allocations_db_tables()[1]), df_selector):
