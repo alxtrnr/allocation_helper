@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+
+# Streamlit local secrets (do not commit)
+.streamlit/secrets.toml
+
+# Test/Editor caches
+.pytest_cache/
+.ipynb_checkpoints/
+.mypy_cache/
+
+# IDE/OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
