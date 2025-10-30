@@ -1,0 +1,20 @@
+Welcome to the CBC MILP Solver 
+Version: 2.10.3 
+Build Date: Dec 15 2019 
+
+command line - /home/alexander/python_projects/allocation_helper/allocation_helper/venv/lib/python3.12/site-packages/pulp/solverdir/cbc/linux/64/cbc Staff_Observation_Assignment_Problem-pulp.mps timeMode elapsed branch printingOptions all solution Staff_Observation_Assignment_Problem-pulp.sol (default strategy 1)
+At line 2 NAME          MODEL
+At line 3 ROWS
+At line 5 COLUMNS
+At line 7 RHS
+At line 8 BOUNDS
+At line 10 ENDATA
+Problem MODEL has 0 rows, 1 columns and 0 elements
+Coin0008I MODEL read with 0 errors
+Option for timeMode changed from cpu to elapsed
+Empty problem - 0 rows, 1 columns and 0 elements
+Optimal - objective value 0
+Optimal objective 0 - 0 iterations time 0.002
+Option for printingOptions changed from normal to all
+Total time (CPU seconds):       0.00   (Wallclock seconds):       0.00
+

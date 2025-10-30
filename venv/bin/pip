@@ -1,4 +1,4 @@
-#!/home/alexander/python_projects/allocation_helper/allocation_helper/venv/bin/python3
+#!/home/alexander/python_projects/allocation_helper/allocation_helper/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

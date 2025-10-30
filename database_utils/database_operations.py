@@ -14,13 +14,22 @@ from services.patient_service import delete_patient_entry
 from services.staff_service import update_staff_entry
 from services.patient_service import update_patient_entry
 
-STAFF_DB, PATIENT_DB, ENGINE = allocations_db_tables()
+# Helper accessors to avoid module-level initialization
+
+def get_staff_db():
+    return allocations_db_tables()[0]
+
+def get_patient_db():
+    return allocations_db_tables()[1]
+
+def get_engine():
+    return allocations_db_tables()[2]
 
 
 # ---- Database Operations ----
 
 def connect_database():
-    Session = sessionmaker(bind=ENGINE)
+    Session = sessionmaker(bind=get_engine())
     return Session()
 
 
@@ -51,7 +60,8 @@ def delete_data_from_database(db_session, data):
 
 def add_staff():
     st.markdown("#### :blue[Add Staff]")
-    with connect_database() as db_session:
+    db_session = connect_database()
+    try:
         name = st.text_input("staff_name", key="staff_name",
                              label_visibility='hidden',
                              placeholder='Name').title()
@@ -66,11 +76,14 @@ def add_staff():
                 st.experimental_rerun()
             else:
                 st.error(result['message'])
+    finally:
+        db_session.close()
 
 
 def add_patient():
     st.markdown("#### :blue[Add Patient]")
-    with connect_database() as db_session:
+    db_session = connect_database()
+    try:
         name = st.text_input("patient_name", key='patient_name',
                              label_visibility="hidden",
                              placeholder="Name").title()
@@ -81,12 +94,15 @@ def add_patient():
                 st.experimental_rerun()
             else:
                 st.error(result['message'])
+    finally:
+        db_session.close()
 
 
 def delete_staff():
     st.markdown("#### :red[Delete Staff]")
-    with connect_database() as db_session:
-        slist = [s.name for s in db_session.query(STAFF_DB)]
+    db_session = connect_database()
+    try:
+        slist = [s.name for s in db_session.query(get_staff_db())]
         staff_selector = st.selectbox('**:red[Delete]**',
                                       options=slist, index=0,
                                       key="delete_staff_selector", help=None,
@@ -97,12 +113,15 @@ def delete_staff():
         if st.button("**:red[Delete Staff]**"):
             delete_staff_entry(db_session, staff_selector)
             st.experimental_rerun()
+    finally:
+        db_session.close()
 
 
 def delete_patient():
     st.markdown("#### :red[Delete Patient]")
-    with connect_database() as db_session:
-        p_list = [p.name for p in db_session.query(PATIENT_DB)]
+    db_session = connect_database()
+    try:
+        p_list = [p.name for p in db_session.query(get_patient_db())]
         patient_selector = st.selectbox('**:red[Delete]**',
                                         options=p_list, index=0,
                                         key="delete_staff_selector", help=None,
@@ -113,22 +132,28 @@ def delete_patient():
         if st.button("**:red[Delete Patient]**"):
             delete_patient_entry(db_session, patient_selector)
             st.experimental_rerun()
+    finally:
+        db_session.close()
 
 
 def view_staff():
-    with connect_database() as db_session:
-        staff_list = db_session.query(STAFF_DB).all()
+    db_session = connect_database()
+    try:
+        staff_list = db_session.query(get_staff_db()).all()
         if staff_list:
             st.write("\n".join(
                 [f"{staff.id} {staff.name} ({staff.role})" for staff in
                  staff_list]))
         else:
             st.write("No staff found.")
+    finally:
+        db_session.close()
 
 
 def view_patients():
-    with connect_database() as db_session:
-        patient_list = db_session.query(PATIENT_DB).all()
+    db_session = connect_database()
+    try:
+        patient_list = db_session.query(get_patient_db()).all()
         if patient_list:
             for patient in patient_list:
                 omit_staff_str = ", ".join(patient.omit_staff) or "None"
@@ -139,6 +164,8 @@ def view_patients():
                     f"{patient.gender_req}, Staff to omit_time_str: {omit_staff_str})")
         else:
             st.write("No patients found.")
+    finally:
+        db_session.close()
 
 
 def staff_data_editor():
@@ -151,21 +178,26 @@ def staff_data_editor():
 
     patient_table = allocations_db_tables()[1]
 
-    with connect_database() as db_session:
+    db_session = connect_database()
+    try:
+        # Cache model classes once to avoid multiple FROMs and cartesian products
+        staff_db = get_staff_db()
+        patient_db = get_patient_db()
+
         # Construct the query to retrieve staff data from the database
         query = select(
-            STAFF_DB.name,
-            STAFF_DB.role,
-            STAFF_DB.gender,
-            STAFF_DB.assigned,
-            STAFF_DB.special_string,
-            STAFF_DB.special_list,
-            STAFF_DB.start,
-            STAFF_DB.end,
-            STAFF_DB.omit
+            staff_db.name,
+            staff_db.role,
+            staff_db.gender,
+            staff_db.assigned,
+            staff_db.special_string,
+            staff_db.special_list,
+            staff_db.start,
+            staff_db.end,
+            staff_db.omit
         )
 
-        patients_names = select(PATIENT_DB.name)
+        patients_names = select(patient_db.name)
 
         # Execute the query and fetch the results
         result = db_session.execute(query)
@@ -191,7 +223,6 @@ def staff_data_editor():
                                                  disabled=None, required=None,
                                                  default="Name", max_chars=None,
                                                  validate=None),
-
                                              'Role': st.column_config.SelectboxColumn(
                                                  label='Role', width="small",
                                                  help="Select role from the "
@@ -199,7 +230,6 @@ def staff_data_editor():
                                                  disabled=None, required=None,
                                                  default=None,
                                                  options=['HCA', 'RMN']),
-
                                              'Gender': st.column_config.SelectboxColumn(
                                                  label=None, width="small",
                                                  help="Select gender from the"
@@ -207,7 +237,6 @@ def staff_data_editor():
                                                  disabled=None, required=None,
                                                  default=None,
                                                  options=['M', 'F']),
-
                                              'Assign': st.column_config.CheckboxColumn(
                                                  label='Allocations',
                                                  width="small",
@@ -216,7 +245,6 @@ def staff_data_editor():
                                                  disabled=None,
                                                  required=None, default=None
                                              ),
-
                                              'String': st.column_config.SelectboxColumn(
                                                  label="Selector",
                                                  width="small",
@@ -227,14 +255,12 @@ def staff_data_editor():
                                                  disabled=None,
                                                  required=None, default=None,
                                                  options=patients),
-
                                              'Cherry Pick': st.column_config.TextColumn(
                                                  label=None, width="small",
                                                  help='Only assign to obs for '
                                                       'the names shown',
                                                  disabled=True,
                                                  required=None, default=None),
-
                                              'Start': st.column_config.SelectboxColumn(
                                                  label="Start Time",
                                                  width="small",
@@ -244,7 +270,6 @@ def staff_data_editor():
                                                       "specified below.",
                                                  disabled=None, required=None,
                                                  default=None, options=hours),
-
                                              'End': st.column_config.SelectboxColumn(
                                                  label="End Time",
                                                  width="small",
@@ -255,7 +280,6 @@ def staff_data_editor():
                                                  disabled=None,
                                                  required=None, default=None,
                                                  options=hours),
-
                                              'Omit': st.column_config.TextColumn(
                                                  label=None, width="small",
                                                  help='HH:00 separated by a '
@@ -265,8 +289,7 @@ def staff_data_editor():
                                                  disabled=None,
                                                  required=None, default=None,
                                                  max_chars=None,
-                                                 # hh:mm or hh:mm hh:mm...
-                                                 validate="^(?:([01][0-9]|2[0-3]):00(?:\s|$))+"),
+                                                 validate=r"^(?:([01][0-9]|2[0-3]):00(?:\s|$))+$"),
                                          },
                                          key="staff_df"
                                          )
@@ -288,12 +311,9 @@ def staff_data_editor():
         df_special = [row['String'] for _, row in
                       edited_staff_df.iterrows()]
 
-        # The following conditional statements check and sync entries between
-        # the editable dataframe and database
-
-        # names
+        # Sync from editor to DB using the cached model class
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_names):
+                db_session.query(staff_db), df_names):
             if db_entry.name != df_entry:
                 res = update_staff_entry(db_session, db_entry.id, name=df_entry)
                 if not res['success']:
@@ -302,9 +322,8 @@ def staff_data_editor():
                     st.write(res['message'])
                 st.experimental_rerun()
 
-        # role
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_role):
+                db_session.query(staff_db), df_role):
             if db_entry.role != df_entry:
                 res = update_staff_entry(db_session, db_entry.id, role=df_entry)
                 if not res['success']:
@@ -312,9 +331,8 @@ def staff_data_editor():
                 else:
                     st.write(res['message'])
 
-        # gender
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_gender):
+                db_session.query(staff_db), df_gender):
             if db_entry.gender != df_entry:
                 res = update_staff_entry(db_session, db_entry.id, gender=df_entry)
                 if not res['success']:
@@ -322,15 +340,13 @@ def staff_data_editor():
                 else:
                     st.write(res['message'])
 
-        # select / deselect for allocation
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_assign):
+                db_session.query(staff_db), df_assign):
             if db_entry.assigned != df_entry:
                 db_entry.assigned = df_entry
 
-        # start time
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_start):
+                db_session.query(staff_db), df_start):
             if db_entry.start != df_entry:
                 db_entry.start = df_entry
                 idx = hour_str_to_index(df_entry)
@@ -343,9 +359,8 @@ def staff_data_editor():
                 else:
                     db_entry.start_time = 0
 
-        # end time
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_end):
+                db_session.query(staff_db), df_end):
             if db_entry.end != df_entry:
                 db_entry.end = df_entry
                 idx = hour_str_to_index(df_entry)
@@ -358,9 +373,8 @@ def staff_data_editor():
                 else:
                     db_entry.end_time = 12
 
-        # omit times
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_omit):
+                db_session.query(staff_db), df_omit):
             if db_entry.omit != df_entry:
                 db_entry.omit = df_entry
                 db_entry.omit_time.clear()
@@ -369,9 +383,8 @@ def staff_data_editor():
                 for twelve_hour_range in modified_times:
                     db_entry.omit_time.append(twelve_hour_range)
 
-        # cherry-pick
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[0]), df_special):
+                db_session.query(staff_db), df_special):
             if df_entry:
                 if df_entry not in db_entry.special_list:
                     db_entry.special_list.append(df_entry)
@@ -379,8 +392,9 @@ def staff_data_editor():
                     db_entry.special_list.pop(
                         db_entry.special_list.index(df_entry))
 
-            db_session.commit()
-
+        db_session.commit()
+    finally:
+        db_session.close()
 
     col1, col2 = st.columns(2)
     with col1:
@@ -390,22 +404,27 @@ def staff_data_editor():
 
 
 def patient_data_editor():
-    with connect_database() as db_session:
+    db_session = connect_database()
+    try:
+        # Cache model classes once per call to avoid cartesian products
+        patient_db = get_patient_db()
+        staff_db = get_staff_db()
+
         # Construct query to retrieve patient data from the database
         query = select(
-            PATIENT_DB.name,
-            PATIENT_DB.observation_level,
-            PATIENT_DB.obs_type,
-            PATIENT_DB.room_number,
-            PATIENT_DB.gender_req,
-            PATIENT_DB.omit_staff_selector,
-            PATIENT_DB.omit_staff
+            patient_db.name,
+            patient_db.observation_level,
+            patient_db.obs_type,
+            patient_db.room_number,
+            patient_db.gender_req,
+            patient_db.omit_staff_selector,
+            patient_db.omit_staff
         )
         result = db_session.execute(query)
         patient_data = result.fetchall()
 
         # Construct query to retrieve staff data from the database
-        staff_names = select(STAFF_DB.name)
+        staff_names = select(staff_db.name)
         s_names = db_session.execute(staff_names)
         staff = [name[0] for name in s_names.all()]
 
@@ -429,7 +448,6 @@ def patient_data_editor():
                                                    default="Name",
                                                    max_chars=None,
                                                    validate=None),
-
                                                'Obs Level': st.column_config.SelectboxColumn(
                                                    label=None, width="small",
                                                    help="Select the obs level "
@@ -438,7 +456,6 @@ def patient_data_editor():
                                                    disabled=None,
                                                    required=None, default=0,
                                                    options=[0, 1, 2, 3, 4]),
-
                                                'Obs Type': st.column_config.TextColumn(
                                                    label=None, width="large",
                                                    help='Any details e.g. '
@@ -447,7 +464,6 @@ def patient_data_editor():
                                                    disabled=None, required=None,
                                                    default=None, max_chars=None,
                                                    validate=None),
-
                                                'Room No': st.column_config.SelectboxColumn(
                                                    label=None, width="small",
                                                    help="Select the room "
@@ -460,7 +476,6 @@ def patient_data_editor():
                                                             '10', '11', '12',
                                                             '13', '14', '15',
                                                             '16']),
-
                                                'Gender Reqs': st.column_config.SelectboxColumn(
                                                    label=None, width="small",
                                                    help="If specified only"
@@ -471,7 +486,6 @@ def patient_data_editor():
                                                    required=None,
                                                    default=None,
                                                    options=["F", "M"]),
-
                                                'Selector': st.column_config.SelectboxColumn(
                                                    label="Selector",
                                                    width="small",
@@ -482,7 +496,6 @@ def patient_data_editor():
                                                    disabled=None,
                                                    required=None, default=None,
                                                    options=staff),
-
                                                'Omit Staff': st.column_config.TextColumn(
                                                    label="Excluded from obs",
                                                    width="small",
@@ -511,7 +524,7 @@ def patient_data_editor():
                        edited_patient_df.iterrows()]
 
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[1]), df_names):
+                db_session.query(patient_db), df_names):
             if db_entry.name != df_entry:
                 res = update_patient_entry(db_session, db_entry.id, name=df_entry)
                 if not res['success']:
@@ -520,7 +533,7 @@ def patient_data_editor():
                     st.write(res['message'])
 
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[1]), df_obs_level):
+                db_session.query(patient_db), df_obs_level):
             if db_entry.observation_level != df_entry:
                 res = update_patient_entry(db_session, db_entry.id, observation_level=df_entry)
                 if not res['success']:
@@ -529,7 +542,7 @@ def patient_data_editor():
                     st.write(res['message'])
 
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[1]), df_obs_type):
+                db_session.query(patient_db), df_obs_type):
             if db_entry.obs_type != df_entry:
                 res = update_patient_entry(db_session, db_entry.id, obs_type=df_entry)
                 if not res['success']:
@@ -538,7 +551,7 @@ def patient_data_editor():
                     st.write(res['message'])
 
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[1]), df_room_no):
+                db_session.query(patient_db), df_room_no):
             if db_entry.room_number != df_entry:
                 res = update_patient_entry(db_session, db_entry.id, room_number=df_entry)
                 if not res['success']:
@@ -547,7 +560,7 @@ def patient_data_editor():
                     st.write(res['message'])
 
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[1]), df_gender_req):
+                db_session.query(patient_db), df_gender_req):
             if db_entry.gender_req != df_entry:
                 res = update_patient_entry(db_session, db_entry.id, gender_req=df_entry)
                 if not res['success']:
@@ -556,7 +569,7 @@ def patient_data_editor():
                     st.write(res['message'])
 
         for db_entry, df_entry in zip(
-                db_session.query(allocations_db_tables()[1]), df_selector):
+                db_session.query(patient_db), df_selector):
             if df_entry:
                 if df_entry not in db_entry.omit_staff:
                     db_entry.omit_staff.append(df_entry)
@@ -565,6 +578,8 @@ def patient_data_editor():
                         db_entry.omit_staff.index(df_entry))
 
         db_session.commit()
+    finally:
+        db_session.close()
 
     col1, col2 = st.columns(2)
     with col1:

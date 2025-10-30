@@ -15,13 +15,16 @@ def app():
         else:
             st.title(":orange[Suggested Allocations]")
             # Check allocation feasibility before allow solve
-            with connect_database() as db_session:
+            db_session = connect_database()
+            try:
                 feas = check_allocation_feasibility(db_session)
                 if not feas['success']:
                     st.error(feas['message'])
                     for w in feas['warnings']:
                         st.warning(w)
                     st.stop()
+            finally:
+                db_session.close()
             pick = st.radio(label='**:green[Shift Selector]**',
                             options=['Days', 'Nights'],
                             index=0, key=None, help=None, on_change=None,
