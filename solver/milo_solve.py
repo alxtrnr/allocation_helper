@@ -9,7 +9,6 @@ from pulp import PULP_CBC_CMD
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pulp
-import streamlit as st
 from database_utils.milo_input_data import get_staff_rows_as_dict, get_patient_rows_as_dict
 from .milo_results import print_results
 
@@ -107,17 +106,15 @@ def solve_staff_allocation(shift):
                         s["id"], o["id"],
                         t)] == 0, f"Omit Staff (observation {o['id']}, staff {s['id']}, time {t}) Constraint"
 
-    # Ensure staff are only assigned to a specific patient(s)
+    # Enforce staff are only assigned to patients in their special_list (if any)
     for s in staff:
-        for o in observations:
-            if o["name"] in s["special_list"]:
-                for t in range(12):
-                    if assignments[(s["id"], o["id"], t)] == 1:
-                        # set all other assignments for this staff to 0 for
-                        # this time slot
-                        for other_o in observations:
-                            if other_o != o and (s["id"], other_o["id"], t) in assignments:
-                                problem += assignments[(s["id"], other_o["id"], t)] == 0
+        special = set(s.get("special_list") or [])
+        if special:
+            for o in observations:
+                if o["name"] not in special:
+                    for t in range(12):
+                        problem += assignments[(s["id"], o["id"], t)] == 0, \
+                            f"Special List Restriction (staff {s['id']}, observation {o['id']}, time {t}) Constraint"
 
     # Ensure staff are assigned to no more than one patient at a time
     for t in range(12):
@@ -130,14 +127,15 @@ def solve_staff_allocation(shift):
             problem += pulp.lpSum(
                 assigned_patients) <= 1, f"Staff Row Constraint (staff {s['id']}, time {t}) Constraint"
 
-    # Ensure each staff member is not assigned to an observation for more
+    # Ensure each staff member is not assigned to THE SAME observation for more
     # than 2 consecutive hours
     for s in staff:
-        for t in range(11):
-            if s["assigned"] and s["start_time"] <= t < s["end_time"] - 1:
-                problem += pulp.lpSum([assignments[(s["id"], o["id"], t_prime)] for o in observations for t_prime in
-                                       range(max(0, t - 1),
-                                             t + 2)]) <= 2, f"Consecutive Hours (staff {s['id']}, time {t}) Constraint"
+        for o in observations:
+            for t in range(11):
+                if s["assigned"] and s["start_time"] <= t < s["end_time"] - 1:
+                    problem += pulp.lpSum([assignments[(s["id"], o["id"], t_prime)] for t_prime in
+                                           range(max(0, t - 1),
+                                                 t + 2)]) <= 2, f"Consecutive Hours (staff {s['id']}, observation {o['id']}, time {t}) Constraint"
 
     # Staff whose duration is < 12 must have >= 1 unassigned time slot
     # between their start_time + 3 and end_time
@@ -156,23 +154,31 @@ def solve_staff_allocation(shift):
                 [assignments[(s["id"], o["id"], t)] for o in observations for t in range(5, 12)]) <= 5, \
                 f"Break Constraint (staff {s['id']}) Constraint"
 
-    # Add the objective function to the problem
-    problem += pulp.lpSum(
-        [1 - assignments[(s["id"], o["id"], t)] for o in observations for t in range(12) for s in staff if
-         s["assigned"] and s["start_time"] <= t < s[
-             "end_time"]]), "Minimize Unassigned Observations"
+    # Add the objective function to minimize workload imbalance
+    # We minimize the maximum workload (min-max optimization) to ensure fair distribution
+    
+    # Create auxiliary variable for maximum workload
+    max_workload = pulp.LpVariable("max_workload", lowBound=0, cat="Continuous")
+    
+    # For each staff member, calculate their total workload and constrain it to be <= max_workload
+    for s in staff:
+        if s["assigned"]:  # Only consider assigned staff
+            staff_total_workload = pulp.lpSum([assignments[(s["id"], o["id"], t)] 
+                                               for o in observations 
+                                               for t in range(12)
+                                               if s["start_time"] <= t < s["end_time"]])
+            problem += staff_total_workload <= max_workload, f"Max_Workload_Constraint_Staff_{s['id']}"
+    
+    # Objective: minimize the maximum workload (this tends to balance workload across staff)
+    problem += max_workload, "Minimize_Maximum_Workload"
 
-    # Solve the problem
-    problem.solve()
-    # set the logPath and keepFiles parameters to create a log of the MIP
-    # formulation
-    solve = problem.solve(PULP_CBC_CMD(logPath="log.txt", keepFiles=True, msg=True))
+    # Solve the problem with logging enabled
+    problem.solve(PULP_CBC_CMD(logPath="log.txt", keepFiles=True, msg=True))
     problem.writeLP('allocations.lp')
 
-    # Print the status of the solution
+    # Print the status of the solution (no UI side-effects here)
     if pulp.LpStatus[problem.status] == 'Infeasible':
-        st.write(f"**:red[Status: {pulp.LpStatus[problem.status]}]**")
-        exit()
+        print(f"Status: {pulp.LpStatus[problem.status]}")
 
     print_results(staff, observations, assignments, shift)
     return staff, observations, assignments

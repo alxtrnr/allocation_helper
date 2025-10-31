@@ -320,7 +320,6 @@ def staff_data_editor():
                     st.error(f"Update name failed: {res['message']}")
                 else:
                     st.write(res['message'])
-                st.experimental_rerun()
 
         for db_entry, df_entry in zip(
                 db_session.query(staff_db), df_role):
