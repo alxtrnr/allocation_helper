@@ -109,20 +109,6 @@ def handle_infeasibility(staff, observations, shift):
             Consider reducing observation levels for some patients during the afternoon (if clinically appropriate).
             """)
     
-    with st.expander("📊 Solution 4: View Detailed Diagnostics"):
-        st.markdown("""
-        Run the diagnostic script for detailed analysis:
-        
-        ```bash
-        python3 diagnose_infeasibility.py
-        ```
-        
-        Or check the solver log:
-        ```bash
-        cat log.txt
-        ```
-        """)
-    
     st.markdown("---")
     st.info("💡 **Tip:** Start with Solution 1 (add more staff) - it's the quickest fix!")
 
