@@ -11,6 +11,120 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pulp
 from database_utils.milo_input_data import get_staff_rows_as_dict, get_patient_rows_as_dict
 from .milo_results import print_results
+import streamlit as st
+
+
+def handle_infeasibility(staff, observations, shift):
+    """
+    Display helpful diagnostics when the solver reports infeasibility.
+    """
+    st.error("❌ Allocation Problem is INFEASIBLE")
+    st.markdown("---")
+    
+    st.markdown("### The allocation cannot be solved with current constraints.")
+    st.markdown("This means it's mathematically impossible to satisfy all requirements simultaneously.")
+    
+    # Analyze the issue
+    st.markdown("### 🔍 Diagnostic Analysis")
+    
+    # Count staff with 12h shifts
+    staff_12h = [s for s in staff if s.get("assigned") and s.get("duration", 0) >= 12]
+    staff_less_12h = [s for s in staff if s.get("assigned") and s.get("duration", 0) < 12]
+    
+    # Calculate observation needs
+    total_need_per_slot = sum(int(o.get("observation_level", 0)) for o in observations)
+    
+    st.markdown(f"""
+    **Current Staffing:**
+    - 🕐 **{len(staff_12h)} staff** working ≥12 hour shifts (need 2-hour breaks in slots 5-11)
+    - 🕑 **{len(staff_less_12h)} staff** working <12 hour shifts
+    - 📊 **{total_need_per_slot} staff** needed per hour for observations
+    """)
+    
+    # Break window analysis
+    if len(staff_12h) > 0:
+        capacity_in_break_window = len(staff_12h) * 5  # max 5 of 7 slots
+        required_in_break_window = total_need_per_slot * 7  # 7 slots
+        
+        st.markdown(f"""
+        **Break Window Analysis (Slots 5-11):**
+        - 🔢 Available capacity: {len(staff_12h)} staff × 5 slots = **{capacity_in_break_window} staff-slots**
+        - 📋 Required coverage: {total_need_per_slot} staff × 7 slots = **{required_in_break_window} staff-slots**
+        """)
+        
+        if capacity_in_break_window < required_in_break_window:
+            shortage = required_in_break_window - capacity_in_break_window
+            st.error(f"⚠️ **SHORTAGE: {shortage} staff-slots** in break window!")
+    
+    # Recommendations
+    st.markdown("### 💡 Recommended Solutions")
+    
+    with st.expander("✅ Solution 1: Add More Staff (Easiest)", expanded=True):
+        if len(staff_12h) > 0:
+            capacity_in_break_window = len(staff_12h) * 5
+            required_in_break_window = total_need_per_slot * 7
+            if capacity_in_break_window < required_in_break_window:
+                shortage = required_in_break_window - capacity_in_break_window
+                additional_needed = (shortage + 4) // 5  # Round up
+                st.markdown(f"""
+                Add **{additional_needed} more staff members** working 12-hour shifts.
+                
+                **Steps:**
+                1. Go to the **Staff** tab
+                2. Add {additional_needed} new staff members
+                3. Set them as "Assigned" 
+                4. Set working hours: 08:00-19:00 (full day shift)
+                5. Return here and re-run allocations
+                """)
+    
+    with st.expander("✅ Solution 2: Stagger Shift Times"):
+        st.markdown("""
+        Change some staff to **11-hour shifts** instead of 12-hour shifts.
+        
+        **Why this helps:** 11-hour shifts only require a 1-hour break (more flexible).
+        
+        **Steps:**
+        1. Go to the **Staff** tab
+        2. Select 3-4 staff members
+        3. Change their end time from 19:00 to 18:00 (11-hour shift)
+        4. Return here and re-run allocations
+        """)
+    
+    with st.expander("✅ Solution 3: Reduce Observation Levels"):
+        high_obs_patients = [o for o in observations if int(o.get("observation_level", 0)) >= 2]
+        if high_obs_patients:
+            st.markdown(f"""
+            You have **{len(high_obs_patients)} patient(s)** with level-2 or higher observations.
+            
+            If clinically appropriate, consider reducing observation levels temporarily:
+            
+            **Steps:**
+            1. Go to the **Patients** tab
+            2. Review high-observation patients
+            3. Adjust observation levels if appropriate
+            4. Return here and re-run allocations
+            """)
+        else:
+            st.markdown("""
+            Consider reducing observation levels for some patients during the afternoon (if clinically appropriate).
+            """)
+    
+    with st.expander("📊 Solution 4: View Detailed Diagnostics"):
+        st.markdown("""
+        Run the diagnostic script for detailed analysis:
+        
+        ```bash
+        python3 diagnose_infeasibility.py
+        ```
+        
+        Or check the solver log:
+        ```bash
+        cat log.txt
+        ```
+        """)
+    
+    st.markdown("---")
+    st.info("💡 **Tip:** Start with Solution 1 (add more staff) - it's the quickest fix!")
 
 
 def solve_staff_allocation(shift):
@@ -176,10 +290,19 @@ def solve_staff_allocation(shift):
     problem.solve(PULP_CBC_CMD(logPath="log.txt", keepFiles=True, msg=True))
     problem.writeLP('allocations.lp')
 
-    # Print the status of the solution (no UI side-effects here)
-    if pulp.LpStatus[problem.status] == 'Infeasible':
-        print(f"Status: {pulp.LpStatus[problem.status]}")
-
-    print_results(staff, observations, assignments, shift)
-    return staff, observations, assignments
+    # Check solver status and handle infeasibility
+    status = pulp.LpStatus[problem.status]
+    
+    if status == 'Infeasible':
+        print(f"Status: {status}")
+        handle_infeasibility(staff, observations, shift)
+        return None, None, None
+    elif status == 'Optimal':
+        st.success(f"✅ Allocation Status: {status}")
+        print_results(staff, observations, assignments, shift)
+        return staff, observations, assignments
+    else:
+        st.warning(f"⚠️ Allocation Status: {status}")
+        print_results(staff, observations, assignments, shift)
+        return staff, observations, assignments
 
