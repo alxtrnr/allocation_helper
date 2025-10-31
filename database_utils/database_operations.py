@@ -186,6 +186,7 @@ def staff_data_editor():
 
         # Construct the query to retrieve staff data from the database
         query = select(
+            staff_db.id,
             staff_db.name,
             staff_db.role,
             staff_db.gender,
@@ -195,7 +196,7 @@ def staff_data_editor():
             staff_db.start,
             staff_db.end,
             staff_db.omit
-        )
+        ).order_by(staff_db.id)
 
         patients_names = select(patient_db.name)
 
@@ -207,9 +208,12 @@ def staff_data_editor():
         patients = [name[0] for name in p_names.all()]
 
         # Convert staff_data into a Pandas DataFrame
-        column_names = ['Name', 'Role', 'Gender', 'Assign', 'String',
+        column_names = ['ID', 'Name', 'Role', 'Gender', 'Assign', 'String',
                         'Cherry Pick', 'Start', 'End', 'Omit']
         staff_df = pd.DataFrame(staff_data, columns=column_names)
+        
+        # Store IDs for matching, but don't display in editor
+        staff_ids = staff_df['ID'].tolist()
 
         # Help text for Cherry Pick functionality
         st.info("💡 **Cherry Pick:** Use the 'Add/Remove' dropdown to select patients. "
@@ -222,6 +226,10 @@ def staff_data_editor():
                                          height=625,
                                          hide_index=True,
                                          column_config={
+                                             'ID': st.column_config.NumberColumn(
+                                                 label=None,
+                                                 disabled=True,
+                                                 default=None),
                                              'Name': st.column_config.TextColumn(
                                                  label=None, width="small",
                                                  help="Enter staff name",
@@ -302,106 +310,99 @@ def staff_data_editor():
                                          key="staff_df"
                                          )
 
-        df_names = [row['Name'].title() for _, row in
-                    edited_staff_df.iterrows()]
-        df_role = [row['Role'].upper() for _, row in
-                   edited_staff_df.iterrows()]
-        df_gender = [row['Gender'].upper() for _, row in
-                     edited_staff_df.iterrows()]
-        df_assign = [row['Assign'] for _, row in
-                     edited_staff_df.iterrows()]
-        df_start = [row['Start'].title() for _, row in
-                    edited_staff_df.iterrows()]
-        df_end = [row['End'].title() for _, row in
-                  edited_staff_df.iterrows()]
-        df_omit = [row['Omit'] for _, row in
-                   edited_staff_df.iterrows()]
-        df_special = [row['String'] for _, row in
-                      edited_staff_df.iterrows()]
-
-        # Sync from editor to DB using the cached model class
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_names):
-            if db_entry.name != df_entry:
-                res = update_staff_entry(db_session, db_entry.id, name=df_entry)
+        # Create ID-based mapping for accurate row matching
+        staff_by_id = {entry.id: entry for entry in db_session.query(staff_db).all()}
+        
+        # Extract DataFrame columns with ID matching
+        for _, row in edited_staff_df.iterrows():
+            staff_id = int(row['ID'])
+            if staff_id not in staff_by_id:
+                continue  # Skip if ID not found (shouldn't happen)
+            
+            db_entry = staff_by_id[staff_id]
+            
+            # Update name
+            df_name = row['Name'].title()
+            if db_entry.name != df_name:
+                res = update_staff_entry(db_session, db_entry.id, name=df_name)
                 if not res['success']:
                     st.error(f"Update name failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_role):
-            if db_entry.role != df_entry:
-                res = update_staff_entry(db_session, db_entry.id, role=df_entry)
+            
+            # Update role
+            df_role = row['Role'].upper()
+            if db_entry.role != df_role:
+                res = update_staff_entry(db_session, db_entry.id, role=df_role)
                 if not res['success']:
                     st.error(f"Update role failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_gender):
-            if db_entry.gender != df_entry:
-                res = update_staff_entry(db_session, db_entry.id, gender=df_entry)
+            
+            # Update gender
+            df_gender = row['Gender'].upper()
+            if db_entry.gender != df_gender:
+                res = update_staff_entry(db_session, db_entry.id, gender=df_gender)
                 if not res['success']:
                     st.error(f"Update gender failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_assign):
-            if db_entry.assigned != df_entry:
-                db_entry.assigned = df_entry
-
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_start):
-            if db_entry.start != df_entry:
-                db_entry.start = df_entry
-                idx = hour_str_to_index(df_entry)
-                if df_entry in day_set:
-                    db_entry.start_time = day_converter[df_entry]
-                elif df_entry in night_set:
-                    db_entry.start_time = night_converter[df_entry]
+            
+            # Update assigned
+            df_assign = row['Assign']
+            if db_entry.assigned != df_assign:
+                db_entry.assigned = df_assign
+            
+            # Update start time
+            df_start = row['Start'].title()
+            if db_entry.start != df_start:
+                db_entry.start = df_start
+                idx = hour_str_to_index(df_start)
+                if df_start in day_set:
+                    db_entry.start_time = day_converter[df_start]
+                elif df_start in night_set:
+                    db_entry.start_time = night_converter[df_start]
                 elif idx is not None:
                     db_entry.start_time = idx
                 else:
                     db_entry.start_time = 0
                 # Auto-update duration to match actual working hours
                 db_entry.duration = db_entry.end_time - db_entry.start_time
-
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_end):
-            if db_entry.end != df_entry:
-                db_entry.end = df_entry
-                idx = hour_str_to_index(df_entry)
-                if df_entry in day_set:
-                    db_entry.end_time = day_converter[df_entry]
-                elif df_entry in night_set:
-                    db_entry.end_time = night_converter[df_entry]
+            
+            # Update end time
+            df_end = row['End'].title()
+            if db_entry.end != df_end:
+                db_entry.end = df_end
+                idx = hour_str_to_index(df_end)
+                if df_end in day_set:
+                    db_entry.end_time = day_converter[df_end]
+                elif df_end in night_set:
+                    db_entry.end_time = night_converter[df_end]
                 elif idx is not None:
                     db_entry.end_time = idx
                 else:
                     db_entry.end_time = 12
                 # Auto-update duration to match actual working hours
                 db_entry.duration = db_entry.end_time - db_entry.start_time
-
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_omit):
-            if db_entry.omit != df_entry:
-                db_entry.omit = df_entry
+            
+            # Update omit times
+            df_omit = row['Omit']
+            if db_entry.omit != df_omit:
+                db_entry.omit = df_omit
                 db_entry.omit_time.clear()
-                df_entry_list = df_entry.split()
+                df_entry_list = df_omit.split() if df_omit else []
                 modified_times = times_list_to_indices(df_entry_list)
                 for twelve_hour_range in modified_times:
                     db_entry.omit_time.append(twelve_hour_range)
-
-        for db_entry, df_entry in zip(
-                db_session.query(staff_db), df_special):
-            if df_entry:
-                if df_entry not in db_entry.special_list:
-                    db_entry.special_list.append(df_entry)
-                elif df_entry in db_entry.special_list:
+            
+            # Update special list (cherry pick)
+            df_special = row['String']
+            if df_special:
+                if df_special not in db_entry.special_list:
+                    db_entry.special_list.append(df_special)
+                elif df_special in db_entry.special_list:
                     db_entry.special_list.pop(
-                        db_entry.special_list.index(df_entry))
+                        db_entry.special_list.index(df_special))
 
         db_session.commit()
     finally:
@@ -423,6 +424,7 @@ def patient_data_editor():
 
         # Construct query to retrieve patient data from the database
         query = select(
+            patient_db.id,
             patient_db.name,
             patient_db.observation_level,
             patient_db.obs_type,
@@ -430,7 +432,7 @@ def patient_data_editor():
             patient_db.gender_req,
             patient_db.omit_staff_selector,
             patient_db.omit_staff
-        )
+        ).order_by(patient_db.id)
         result = db_session.execute(query)
         patient_data = result.fetchall()
 
@@ -440,7 +442,7 @@ def patient_data_editor():
         staff = [name[0] for name in s_names.all()]
 
         # Convert patient_data into a Pandas DataFrame
-        column_names = ['Name', 'Obs Level', 'Obs Type', 'Room No',
+        column_names = ['ID', 'Name', 'Obs Level', 'Obs Type', 'Room No',
                         'Gender Reqs', 'Selector', 'Omit Staff']
         patient_df = pd.DataFrame(patient_data, columns=column_names)
 
@@ -455,6 +457,10 @@ def patient_data_editor():
                                            height=625,
                                            hide_index=True,
                                            column_config={
+                                               'ID': st.column_config.NumberColumn(
+                                                   label=None,
+                                                   disabled=True,
+                                                   default=None),
                                                'Name': st.column_config.TextColumn(
                                                    label=None, width="small",
                                                    help="Enter the patient's "
@@ -528,71 +534,70 @@ def patient_data_editor():
                                            key="patient_df"
                                            )
 
-        df_names = [row['Name'] for _, row in edited_patient_df.iterrows()]
-        df_obs_level = [row['Obs Level'] for _, row in
-                        edited_patient_df.iterrows()]
-        df_obs_type = [row['Obs Type'] for _, row in
-                       edited_patient_df.iterrows()]
-        df_room_no = [row['Room No'] for _, row in
-                      edited_patient_df.iterrows()]
-        df_gender_req = [row['Gender Reqs'] for _, row in
-                         edited_patient_df.iterrows()]
-        df_selector = [row['Selector'] for _, row in
-                       edited_patient_df.iterrows()]
-
-        for db_entry, df_entry in zip(
-                db_session.query(patient_db), df_names):
-            if db_entry.name != df_entry:
-                res = update_patient_entry(db_session, db_entry.id, name=df_entry)
+        # Create ID-based mapping for accurate row matching
+        patients_by_id = {entry.id: entry for entry in db_session.query(patient_db).all()}
+        
+        # Extract DataFrame columns with ID matching
+        for _, row in edited_patient_df.iterrows():
+            patient_id = int(row['ID'])
+            if patient_id not in patients_by_id:
+                continue  # Skip if ID not found (shouldn't happen)
+            
+            db_entry = patients_by_id[patient_id]
+            
+            # Update name
+            df_name = row['Name']
+            if db_entry.name != df_name:
+                res = update_patient_entry(db_session, db_entry.id, name=df_name)
                 if not res['success']:
                     st.error(f"Update name failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(patient_db), df_obs_level):
-            if db_entry.observation_level != df_entry:
-                res = update_patient_entry(db_session, db_entry.id, observation_level=df_entry)
+            
+            # Update observation level
+            df_obs_level = row['Obs Level']
+            if db_entry.observation_level != df_obs_level:
+                res = update_patient_entry(db_session, db_entry.id, observation_level=df_obs_level)
                 if not res['success']:
                     st.error(f"Update observation level failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(patient_db), df_obs_type):
-            if db_entry.obs_type != df_entry:
-                res = update_patient_entry(db_session, db_entry.id, obs_type=df_entry)
+            
+            # Update obs type
+            df_obs_type = row['Obs Type']
+            if db_entry.obs_type != df_obs_type:
+                res = update_patient_entry(db_session, db_entry.id, obs_type=df_obs_type)
                 if not res['success']:
                     st.error(f"Update obs type failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(patient_db), df_room_no):
-            if db_entry.room_number != df_entry:
-                res = update_patient_entry(db_session, db_entry.id, room_number=df_entry)
+            
+            # Update room number
+            df_room_no = row['Room No']
+            if db_entry.room_number != df_room_no:
+                res = update_patient_entry(db_session, db_entry.id, room_number=df_room_no)
                 if not res['success']:
                     st.error(f"Update room number failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(patient_db), df_gender_req):
-            if db_entry.gender_req != df_entry:
-                res = update_patient_entry(db_session, db_entry.id, gender_req=df_entry)
+            
+            # Update gender requirement
+            df_gender_req = row['Gender Reqs']
+            if db_entry.gender_req != df_gender_req:
+                res = update_patient_entry(db_session, db_entry.id, gender_req=df_gender_req)
                 if not res['success']:
                     st.error(f"Update gender req failed: {res['message']}")
                 else:
                     st.write(res['message'])
-
-        for db_entry, df_entry in zip(
-                db_session.query(patient_db), df_selector):
-            if df_entry:
-                if df_entry not in db_entry.omit_staff:
-                    db_entry.omit_staff.append(df_entry)
-                elif df_entry in db_entry.omit_staff:
+            
+            # Update omit staff list
+            df_selector = row['Selector']
+            if df_selector:
+                if df_selector not in db_entry.omit_staff:
+                    db_entry.omit_staff.append(df_selector)
+                elif df_selector in db_entry.omit_staff:
                     db_entry.omit_staff.pop(
-                        db_entry.omit_staff.index(df_entry))
+                        db_entry.omit_staff.index(df_selector))
 
         db_session.commit()
     finally:

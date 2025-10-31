@@ -5,14 +5,44 @@ Build Date: Dec 15 2019
 command line - /home/alexander/python_projects/allocation_helper/allocation_helper/venv/lib/python3.12/site-packages/pulp/solverdir/cbc/linux/64/cbc Staff_Observation_Assignment_Problem-pulp.mps timeMode elapsed branch printingOptions all solution Staff_Observation_Assignment_Problem-pulp.sol (default strategy 1)
 At line 2 NAME          MODEL
 At line 3 ROWS
-At line 4013 COLUMNS
-At line 17207 RHS
-At line 21216 BOUNDS
-At line 23137 ENDATA
-Problem MODEL has 4008 rows, 1921 columns and 9352 elements
+At line 3809 COLUMNS
+At line 16799 RHS
+At line 20604 BOUNDS
+At line 22525 ENDATA
+Problem MODEL has 3804 rows, 1921 columns and 9148 elements
 Coin0008I MODEL read with 0 errors
 Option for timeMode changed from cpu to elapsed
-Problem is infeasible - 0.01 seconds
+Continuous objective value is 6 - 0.00 seconds
+Cgl0002I 1848 variables fixed
+Cgl0004I processed model has 104 rows, 61 columns (60 integer (60 of which binary)) and 394 elements
+Cutoff increment increased from 1e-05 to 0.9999
+Cbc0038I Initial state - 0 integers unsatisfied sum - 0
+Cbc0038I Solution found of 6
+Cbc0038I Relaxing continuous gives 6
+Cbc0038I Before mini branch and bound, 60 integers at bound fixed and 0 continuous
+Cbc0038I Mini branch and bound did not improve solution (0.01 seconds)
+Cbc0038I After 0.01 seconds - Feasibility pump exiting with objective of 6 - took 0.00 seconds
+Cbc0012I Integer solution of 6 found by feasibility pump after 0 iterations and 0 nodes (0.01 seconds)
+Cbc0001I Search completed - best objective 6, took 0 iterations and 0 nodes (0.01 seconds)
+Cbc0035I Maximum depth 0, 0 variables fixed on reduced cost
+Cuts at root node changed objective from 6 to 6
+Probing was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+Gomory was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+Knapsack was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+Clique was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+MixedIntegerRounding2 was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+FlowCover was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+TwoMirCuts was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+ZeroHalf was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
+
+Result - Optimal solution found
+
+Objective value:                6.00000000
+Enumerated nodes:               0
+Total iterations:               0
+Time (CPU seconds):             0.02
+Time (Wallclock seconds):       0.02
+
 Option for printingOptions changed from normal to all
-Total time (CPU seconds):       0.02   (Wallclock seconds):       0.02
+Total time (CPU seconds):       0.03   (Wallclock seconds):       0.03
 
