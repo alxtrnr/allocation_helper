@@ -1,14 +1,14 @@
 ,Alexander,Justine,Damian,Annabelle,Michael,Oscar,Otis,Malachi,Elijah,Benny
-08:00,Donna Mcarthur,Barry Brown,OFF,OFF,Gary Foy,Justine Gates,OFF,OFF,Gary Sykes,OFF
-09:00,Donna Mcarthur,OFF,Gary Foy,OFF,Gary Foy,OFF,OFF,Barry Brown,OFF,Justine Gates
-10:00,Donna Mcarthur,OFF,Gary Foy,OFF,OFF,OFF,Justine Gates,Gary Foy,Barry Brown,OFF
-11:00,Donna Mcarthur,Gary Sykes,OFF,OFF,Jill Smith,Justine Gates,OFF,Gary Foy,OFF,OFF
-12:00,Donna Mcarthur,OFF,OFF,OFF,OFF,OFF,Barry Brown,Jill Smith,Justine Gates,OFF
-13:00,Donna Mcarthur,OFF,Jill Smith,OFF,OFF,Gary Foy,OFF,Gary Foy,Justine Gates,OFF
-14:00,Donna Mcarthur,Gary Foy,OFF,OFF,Jill Smith,OFF,Gary Sykes,Barry Brown,OFF,OFF
-15:00,Donna Mcarthur,OFF,Gary Sykes,OFF,OFF,Justine Gates,Gary Foy,Barry Brown,Gary Foy,OFF
-16:00,Donna Mcarthur,Gary Foy,Gary Sykes,OFF,Jill Smith,OFF,OFF,OFF,Justine Gates,OFF
-17:00,Donna Mcarthur,OFF,Gary Foy,OFF,Gary Foy,Gary Foy,OFF,Justine Gates,OFF,OFF
-18:00,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,Gary Foy,Gary Sykes,OFF,Gary Foy,OFF
-19:00,Donna Mcarthur,OFF,Gary Foy,OFF,Gary Foy,Justine Gates,Barry Brown,OFF,Gary Sykes,OFF
-TOTAL,12,6,9,0,9,9,9,10,10,2
+08:00,OFF,OFF,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF
+09:00,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF
+10:00,OFF,OFF,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF
+11:00,OFF,Justine Gates,Donna Mcarthur,OFF,OFF,OFF,OFF,OFF,OFF,OFF
+12:00,Donna Mcarthur,OFF,OFF,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF
+13:00,OFF,OFF,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF
+14:00,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF
+15:00,OFF,OFF,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF
+16:00,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF
+17:00,OFF,Justine Gates,Donna Mcarthur,OFF,OFF,OFF,OFF,OFF,OFF,OFF
+18:00,Donna Mcarthur,OFF,OFF,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF
+19:00,Donna Mcarthur,Justine Gates,OFF,OFF,OFF,OFF,OFF,OFF,OFF,OFF
+TOTAL,6,6,6,6,0,0,0,0,0,0

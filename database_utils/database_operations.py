@@ -211,6 +211,11 @@ def staff_data_editor():
                         'Cherry Pick', 'Start', 'End', 'Omit']
         staff_df = pd.DataFrame(staff_data, columns=column_names)
 
+        # Help text for Cherry Pick functionality
+        st.info("💡 **Cherry Pick:** Use the 'Add/Remove' dropdown to select patients. "
+                "If a patient is already in the 'Cherry Pick List', selecting them again will **remove** them. "
+                "The list shows which patients this staff member can **exclusively** observe.")
+
         # This renders a data editor widget with the staff table data
         edited_staff_df = st.data_editor(data=staff_df,
                                          width=1200,
@@ -245,22 +250,25 @@ def staff_data_editor():
                                                  disabled=None,
                                                  required=None, default=None
                                              ),
-                                             'String': st.column_config.SelectboxColumn(
-                                                 label="Selector",
-                                                 width="small",
-                                                 help='Select from the drop '
-                                                      'down box to add/remove '
-                                                      'patient(s) cherry picked'
-                                                      ' for this staff.',
-                                                 disabled=None,
-                                                 required=None, default=None,
-                                                 options=patients),
-                                             'Cherry Pick': st.column_config.TextColumn(
-                                                 label=None, width="small",
-                                                 help='Only assign to obs for '
-                                                      'the names shown',
-                                                 disabled=True,
-                                                 required=None, default=None),
+                                            'String': st.column_config.SelectboxColumn(
+                                                label="Add/Remove",
+                                                width="small",
+                                                help='Select a patient to ADD to '
+                                                     'or REMOVE from the Cherry Pick list. '
+                                                     'If already in the list, selecting '
+                                                     'will remove them. Check the Cherry '
+                                                     'Pick column to see current selections.',
+                                                disabled=None,
+                                                required=None, default=None,
+                                                options=patients),
+                                            'Cherry Pick': st.column_config.TextColumn(
+                                                label="Cherry Pick List",
+                                                width="medium",
+                                                help='Current patients this staff can ONLY '
+                                                     'observe. Use Add/Remove column to toggle. '
+                                                     'Empty = can observe any patient.',
+                                                disabled=True,
+                                                required=None, default=None),
                                              'Start': st.column_config.SelectboxColumn(
                                                  label="Start Time",
                                                  width="small",
@@ -436,6 +444,11 @@ def patient_data_editor():
                         'Gender Reqs', 'Selector', 'Omit Staff']
         patient_df = pd.DataFrame(patient_data, columns=column_names)
 
+        # Help text for Omit Staff functionality
+        st.info("💡 **Exclude Staff:** Use the 'Add/Remove' dropdown to select staff members to exclude. "
+                "If a staff member is already in the 'Excluded Staff' list, selecting them again will **un-exclude** them. "
+                "The list shows which staff will NOT be assigned to this patient.")
+
         # This renders a data editor widget with the patient table data
         edited_patient_df = st.data_editor(data=patient_df,
                                            width=1200,
@@ -489,27 +502,28 @@ def patient_data_editor():
                                                    required=None,
                                                    default=None,
                                                    options=["F", "M"]),
-                                               'Selector': st.column_config.SelectboxColumn(
-                                                   label="Selector",
-                                                   width="small",
-                                                   help='Select from the drop '
-                                                        'down box to exclude '
-                                                        'staff from this '
-                                                        'patients observations.',
-                                                   disabled=None,
-                                                   required=None, default=None,
-                                                   options=staff),
-                                               'Omit Staff': st.column_config.TextColumn(
-                                                   label="Excluded from obs",
-                                                   width="small",
-                                                   help="Named staff will not "
-                                                        "be allocated to "
-                                                        "observations for "
-                                                        "this patient",
-                                                   disabled=True, required=None,
-                                                   default="Name",
-                                                   max_chars=None,
-                                                   validate=None),
+                                              'Selector': st.column_config.SelectboxColumn(
+                                                  label="Add/Remove",
+                                                  width="small",
+                                                  help='Select a staff member to ADD to '
+                                                       'or REMOVE from the exclusion list. '
+                                                       'If already excluded, selecting will '
+                                                       'UN-EXCLUDE them. Check the Omit Staff '
+                                                       'column to see current exclusions.',
+                                                  disabled=None,
+                                                  required=None, default=None,
+                                                  options=staff),
+                                              'Omit Staff': st.column_config.TextColumn(
+                                                  label="Excluded Staff",
+                                                  width="medium",
+                                                  help="Staff listed here will NOT be "
+                                                       "allocated to this patient. "
+                                                       "Use Add/Remove column to toggle. "
+                                                       "Empty = any staff can be assigned.",
+                                                  disabled=True, required=None,
+                                                  default="Name",
+                                                  max_chars=None,
+                                                  validate=None),
                                            },
                                            key="patient_df"
                                            )
