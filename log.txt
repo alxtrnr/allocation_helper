@@ -23,7 +23,7 @@ Cbc0038I Before mini branch and bound, 60 integers at bound fixed and 0 continuo
 Cbc0038I Mini branch and bound did not improve solution (0.01 seconds)
 Cbc0038I After 0.01 seconds - Feasibility pump exiting with objective of 6 - took 0.00 seconds
 Cbc0012I Integer solution of 6 found by feasibility pump after 0 iterations and 0 nodes (0.01 seconds)
-Cbc0001I Search completed - best objective 6, took 0 iterations and 0 nodes (0.01 seconds)
+Cbc0001I Search completed - best objective 6, took 0 iterations and 0 nodes (0.02 seconds)
 Cbc0035I Maximum depth 0, 0 variables fixed on reduced cost
 Cuts at root node changed objective from 6 to 6
 Probing was tried 0 times and created 0 cuts of which 0 were active after adding rounds of cuts (0.000 seconds)
@@ -44,5 +44,5 @@ Time (CPU seconds):             0.02
 Time (Wallclock seconds):       0.02
 
 Option for printingOptions changed from normal to all
-Total time (CPU seconds):       0.03   (Wallclock seconds):       0.03
+Total time (CPU seconds):       0.03   (Wallclock seconds):       0.04
 

@@ -329,6 +329,7 @@ def staff_data_editor():
                     st.error(f"Update name failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update role
             df_role = row['Role'].upper()
@@ -338,6 +339,7 @@ def staff_data_editor():
                     st.error(f"Update role failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update gender
             df_gender = row['Gender'].upper()
@@ -347,6 +349,7 @@ def staff_data_editor():
                     st.error(f"Update gender failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update assigned
             df_assign = row['Assign']
@@ -403,6 +406,9 @@ def staff_data_editor():
                 elif df_special in db_entry.special_list:
                     db_entry.special_list.pop(
                         db_entry.special_list.index(df_special))
+            
+            # Refresh the object after all updates to ensure it's in sync
+            db_session.refresh(db_entry)
 
         db_session.commit()
     finally:
@@ -553,6 +559,7 @@ def patient_data_editor():
                     st.error(f"Update name failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update observation level
             df_obs_level = row['Obs Level']
@@ -562,6 +569,7 @@ def patient_data_editor():
                     st.error(f"Update observation level failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update obs type
             df_obs_type = row['Obs Type']
@@ -571,6 +579,7 @@ def patient_data_editor():
                     st.error(f"Update obs type failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update room number
             df_room_no = row['Room No']
@@ -580,6 +589,7 @@ def patient_data_editor():
                     st.error(f"Update room number failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update gender requirement
             df_gender_req = row['Gender Reqs']
@@ -589,6 +599,7 @@ def patient_data_editor():
                     st.error(f"Update gender req failed: {res['message']}")
                 else:
                     st.write(res['message'])
+                    db_session.refresh(db_entry)  # Refresh to get updated values
             
             # Update omit staff list
             df_selector = row['Selector']
@@ -598,6 +609,9 @@ def patient_data_editor():
                 elif df_selector in db_entry.omit_staff:
                     db_entry.omit_staff.pop(
                         db_entry.omit_staff.index(df_selector))
+            
+            # Refresh the object after all updates to ensure it's in sync
+            db_session.refresh(db_entry)
 
         db_session.commit()
     finally:
