@@ -357,6 +357,8 @@ def staff_data_editor():
                     db_entry.start_time = idx
                 else:
                     db_entry.start_time = 0
+                # Auto-update duration to match actual working hours
+                db_entry.duration = db_entry.end_time - db_entry.start_time
 
         for db_entry, df_entry in zip(
                 db_session.query(staff_db), df_end):
@@ -371,6 +373,8 @@ def staff_data_editor():
                     db_entry.end_time = idx
                 else:
                     db_entry.end_time = 12
+                # Auto-update duration to match actual working hours
+                db_entry.duration = db_entry.end_time - db_entry.start_time
 
         for db_entry, df_entry in zip(
                 db_session.query(staff_db), df_omit):
